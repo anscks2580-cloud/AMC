@@ -6,6 +6,15 @@
 <title>AMC 안양시 수학경시대회 — 수험표 조회</title>
 <meta name="description" content="AMC 안양시 수학경시대회 수험표 조회 및 출력">
 <link rel="stylesheet" href="assets/css/amc.css">
+<style>
+  .notes { margin: 0; padding-left: 20px; font-size: 15px; }
+  .notes li { margin-bottom: 8px; }
+  .notes li::marker { color: var(--ochre-deep); font-weight: 700; }
+  .facts { display: grid; grid-template-columns: 84px 1fr; row-gap: 8px; margin: 0 0 16px; font-size: 15px; }
+  .facts dt { color: var(--muted); }
+  .facts dd { margin: 0; font-weight: 600; }
+  @media print { .notes-card { page-break-inside: avoid; } }
+</style>
 </head>
 <body>
 
@@ -21,7 +30,7 @@
 
 <main>
   <div class="wrap wrap-narrow">
-    <section class="card">
+    <section class="card no-print" id="lookup-card">
       <h2>수험표 조회</h2>
       <p class="hint" id="round"></p>
       <form class="form" id="lookup" style="margin-top:20px" novalidate>
@@ -32,7 +41,11 @@
         <div class="form-row">
           <label for="phone">학부모 휴대폰번호</label>
           <input class="input" id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="예: 010-1234-5678" required>
-          <p class="hint" style="margin:6px 0 0">접수할 때 적은 번호를 입력하세요.</p>
+        </div>
+        <div class="form-row">
+          <label for="examNo">수험번호</label>
+          <input class="input" id="examNo" name="examNo" inputmode="numeric" autocomplete="off" placeholder="예: 26070012" required>
+          <p class="hint" style="margin:6px 0 0">접수한 학원에서 안내받은 8자리 번호입니다.</p>
         </div>
         <button class="btn btn-block" type="submit">조회하기</button>
       </form>
@@ -44,18 +57,21 @@
       <p class="row no-print" style="margin-top:16px;justify-content:center">
         <button type="button" class="btn" onclick="window.print()">수험표 인쇄</button>
         <button type="button" class="btn btn-line" id="save-img">이미지로 저장</button>
+        <button type="button" class="btn btn-line" id="again">다시 조회</button>
       </p>
-      <p class="hint center no-print" style="text-align:center">휴대폰이라면 화면을 캡처해 두어도 됩니다.</p>
+      <p class="hint no-print" style="text-align:center;margin:0">휴대폰이라면 화면을 캡처해 두어도 됩니다.</p>
     </section>
 
-    <section class="card no-print">
-      <h3 style="font-size:16px;margin-bottom:8px">시험 당일</h3>
-      <ul style="padding-left:18px;font-size:15px;color:var(--muted)">
-        <li id="info-date"></li>
-        <li id="info-place"></li>
-        <li id="info-checkin"></li>
-        <li>입실할 때 수험표의 QR 코드를 감독관에게 보여 주면 출석이 처리됩니다.</li>
-      </ul>
+    <section class="card notes-card">
+      <h2 style="font-size:18px;margin-bottom:14px">시험 안내</h2>
+      <dl class="facts">
+        <dt>시험일시</dt><dd id="info-date"></dd>
+        <dt>시험장소</dt><dd id="info-place"></dd>
+        <dt>입실</dt><dd id="info-checkin"></dd>
+        <dt>준비물</dt><dd id="info-bring"></dd>
+      </dl>
+      <h3 style="font-size:16px;margin-bottom:10px">유의사항</h3>
+      <ol class="notes" id="notes"></ol>
     </section>
   </div>
 </main>
@@ -70,15 +86,17 @@
 <script src="assets/js/app.js"></script>
 <script>
 (function () {
-  var A = window.AMCApp, $ = A.$, S;
+  var A = window.AMCApp, $ = A.$, esc = A.esc, S;
   var form = $("#lookup"), msg = $("#msg");
 
   A.loadSettings().then(function (s) {
     S = s;
     $("#round").textContent = S.round;
-    $("#info-date").textContent = "시험일시: " + S.examDate;
-    $("#info-place").textContent = "시험장소: " + S.place;
-    $("#info-checkin").textContent = "입실: " + S.checkIn;
+    $("#info-date").textContent = S.examDate;
+    $("#info-place").textContent = S.place;
+    $("#info-checkin").textContent = S.checkIn;
+    $("#info-bring").textContent = S.bring || "";
+    $("#notes").innerHTML = (S.notes || []).map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("");
     $("#host").textContent = S.host || "";
     $("#tel").textContent = S.tel || "";
     $("#tel").href = "tel:" + A.digits(S.tel);
@@ -86,30 +104,37 @@
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
-    var name = form.elements.name.value.trim(), phone = A.digits(form.elements.phone.value);
+    var name = form.elements.name.value.trim(), phone = A.digits(form.elements.phone.value), examNo = form.elements.examNo.value.trim();
     $("#ticket-card").hidden = true;
-    if (!name || phone.length < 10) { A.show(msg, "이름과 학부모 휴대폰번호를 모두 입력해 주세요."); return; }
+    if (!name || phone.length < 10 || !examNo) { A.show(msg, "성명, 학부모 휴대폰번호, 수험번호를 모두 입력해 주세요."); return; }
     if (!A.configured) { A.show(msg, "조회 시스템 준비 중입니다.", "err"); return; }
-    if (!S.ticketOpen) { A.show(msg, "지금은 수험표 조회 기간이 아닙니다." + (S.ticketPeriod ? " 교부 기간: " + A.esc(S.ticketPeriod) : "")); return; }
+    if (!S.ticketOpen) { A.show(msg, "지금은 수험표 조회 기간이 아닙니다." + (S.ticketPeriod ? " 교부 기간: " + esc(S.ticketPeriod) : "")); return; }
     var btn = form.querySelector("button[type=submit]");
     btn.disabled = true; btn.textContent = "조회 중";
     A.lookupKey(name, phone).then(function (key) {
       return A.db.collection("lookup").doc(key).get();
     }).then(function (doc) {
-      if (!doc.exists) {
-        A.show(msg, "입력한 정보와 일치하는 응시 내역이 없습니다. 이름과 번호를 다시 확인하고, 그래도 안 되면 사무국(<a href=\"tel:" + A.digits(S.tel) + "\">" + A.esc(S.tel) + "</a>)으로 문의해 주세요.", "err");
+      var r = doc.exists ? doc.data() : null;
+      if (!r || String(r.examNo) !== examNo) {
+        A.show(msg, "입력한 정보와 일치하는 응시 내역이 없습니다. 성명·휴대폰번호·수험번호를 다시 확인하고, 그래도 안 되면 사무국(<a href=\"tel:" + A.digits(S.tel) + "\">" + esc(S.tel) + "</a>)으로 문의해 주세요.", "err");
         return;
       }
       A.hide(msg);
-      var r = doc.data();
+      if (!r.phone) r.phone = phone;
       $("#ticket").innerHTML = A.ticketHtml(r, S);
       A.drawQrs($("#ticket"));
+      $("#lookup-card").hidden = true;
       $("#ticket-card").hidden = false;
-      $("#ticket-card").scrollIntoView({ behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }).catch(function (err) {
       A.show(msg, "조회 서버에 연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.", "err");
       console.error(err);
     }).then(function () { btn.disabled = false; btn.textContent = "조회하기"; });
+  });
+
+  $("#again").addEventListener("click", function () {
+    $("#ticket-card").hidden = true;
+    $("#lookup-card").hidden = false;
   });
 
   $("#save-img").addEventListener("click", function () {

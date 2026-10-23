@@ -51,7 +51,7 @@
         var el = f.elements[k];
         if (!el) return;
         if (el.type === "checkbox") el.checked = !!s[k];
-        else el.value = Array.isArray(s[k]) ? s[k].join(", ") : (s[k] || "");
+        else el.value = Array.isArray(s[k]) ? s[k].join(k === "notes" ? "\n" : ", ") : (s[k] || "");
       });
     });
   }
@@ -183,7 +183,7 @@
         return A.lookupKey(r.name, r.phone).then(function (k) {
           var rec = Object.assign({}, r, { createdAt: now });
           ops.push({ op: "set", ref: db.collection("students").doc(r.examNo), data: rec });
-          ops.push({ op: "set", ref: db.collection("lookup").doc(k), data: { examNo: r.examNo, name: r.name, grade: r.grade, school: r.school, room: r.room, token: r.token } });
+          ops.push({ op: "set", ref: db.collection("lookup").doc(k), data: { examNo: r.examNo, name: r.name, grade: r.grade, school: r.school, room: r.room, phone: r.phone, token: r.token } });
         });
       }));
     }).then(function () { return commitChunks(ops); });
@@ -288,7 +288,8 @@
     f.addEventListener("submit", function (e) {
       e.preventDefault();
       var data = {};
-      ["round", "examDate", "place", "checkIn", "ticketPeriod", "tel", "host"].forEach(function (k) { data[k] = f.elements[k].value.trim(); });
+      ["round", "examDate", "place", "checkIn", "ticketPeriod", "tel", "host", "bring"].forEach(function (k) { data[k] = f.elements[k].value.trim(); });
+      data.notes = f.elements.notes.value.split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
       data.rooms = f.elements.rooms.value.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
       data.ticketOpen = f.elements.ticketOpen.checked;
       db.collection("settings").doc("current").set(data, { merge: true }).then(function () {

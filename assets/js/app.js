@@ -136,6 +136,7 @@
           '<dt>성명</dt><dd>' + esc(r.name) + '</dd>' +
           '<dt>학년</dt><dd>' + esc(r.grade || "") + '</dd>' +
           (r.school ? '<dt>학교</dt><dd>' + esc(r.school) + '</dd>' : '') +
+          (r.phone ? '<dt>학부모</dt><dd>' + esc(fmtPhone(r.phone)) + '</dd>' : '') +
           '<dt>시험장</dt><dd>' + esc(S.place) + (r.room ? ' ' + esc(r.room) : '') + '</dd>' +
           '<dt>시험일시</dt><dd>' + esc(S.examDate) + '</dd>' +
           '<dt>입실</dt><dd>' + esc(S.checkIn) + '</dd>' +
@@ -145,6 +146,10 @@
       '<div class="ticket-foot">시험 당일 입실할 때 이 QR 코드를 감독관에게 보여 주세요. 화면 캡처나 인쇄물 모두 가능합니다.' +
         (S.tel ? ' 문의 ' + esc(S.tel) : '') + '</div>' +
     '</div>';
+  }
+  function fmtPhone(p) {
+    p = digits(p);
+    return p.length === 11 ? p.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3") : p;
   }
   function drawQrs(root) {
     if (!window.QRCode) return;
@@ -172,7 +177,7 @@
   window.AMCApp = {
     configured: configured, db: db, auth: auth, fb: window.firebase,
     esc: esc, $: $, $$: $$, digits: digits, normName: normName, normGrade: normGrade, gradeCode: gradeCode,
-    pad: pad, fmtTime: fmtTime, fmtDateTime: fmtDateTime, randomToken: randomToken, sha256: sha256, lookupKey: lookupKey,
+    pad: pad, fmtPhone: fmtPhone, fmtTime: fmtTime, fmtDateTime: fmtDateTime, randomToken: randomToken, sha256: sha256, lookupKey: lookupKey,
     show: show, hide: hide, qrText: qrText, parseQr: parseQr,
     loadSettings: loadSettings, requireAdmin: requireAdmin, ticketHtml: ticketHtml, drawQrs: drawQrs
   };
