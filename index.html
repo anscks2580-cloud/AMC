@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AMC 안양시 수학경시대회 — 수험표 조회</title>
+<meta name="description" content="AMC 안양시 수학경시대회 수험표 조회 및 출력">
+<link rel="stylesheet" href="assets/css/amc.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="mark">AMC</span>안양시 수학경시대회 <small>수험표</small></a>
+    <nav>
+      <a href="https://aaoh.or.kr/amc.html">시험 안내</a>
+      <a href="admin.html">관리자</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap wrap-narrow">
+    <section class="card">
+      <h2>수험표 조회</h2>
+      <p class="hint" id="round"></p>
+      <form class="form" id="lookup" style="margin-top:20px" novalidate>
+        <div class="form-row">
+          <label for="name">학생 성명</label>
+          <input class="input" id="name" name="name" autocomplete="off" placeholder="예: 홍길동" required>
+        </div>
+        <div class="form-row">
+          <label for="phone">학부모 휴대폰번호</label>
+          <input class="input" id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="예: 010-1234-5678" required>
+          <p class="hint" style="margin:6px 0 0">접수할 때 적은 번호를 입력하세요.</p>
+        </div>
+        <button class="btn btn-block" type="submit">조회하기</button>
+      </form>
+      <div class="alert" id="msg" role="status" aria-live="polite" hidden></div>
+    </section>
+
+    <section class="card" id="ticket-card" hidden>
+      <div id="ticket"></div>
+      <p class="row no-print" style="margin-top:16px;justify-content:center">
+        <button type="button" class="btn" onclick="window.print()">수험표 인쇄</button>
+        <button type="button" class="btn btn-line" id="save-img">이미지로 저장</button>
+      </p>
+      <p class="hint center no-print" style="text-align:center">휴대폰이라면 화면을 캡처해 두어도 됩니다.</p>
+    </section>
+
+    <section class="card no-print">
+      <h3 style="font-size:16px;margin-bottom:8px">시험 당일</h3>
+      <ul style="padding-left:18px;font-size:15px;color:var(--muted)">
+        <li id="info-date"></li>
+        <li id="info-place"></li>
+        <li id="info-checkin"></li>
+        <li>입실할 때 수험표의 QR 코드를 감독관에게 보여 주면 출석이 처리됩니다.</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<footer class="foot">주최 <span id="host"></span> · 문의 <a id="tel" href="#"></a></footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var A = window.AMCApp, $ = A.$, S;
+  var form = $("#lookup"), msg = $("#msg");
+
+  A.loadSettings().then(function (s) {
+    S = s;
+    $("#round").textContent = S.round;
+    $("#info-date").textContent = "시험일시: " + S.examDate;
+    $("#info-place").textContent = "시험장소: " + S.place;
+    $("#info-checkin").textContent = "입실: " + S.checkIn;
+    $("#host").textContent = S.host || "";
+    $("#tel").textContent = S.tel || "";
+    $("#tel").href = "tel:" + A.digits(S.tel);
+  });
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = form.elements.name.value.trim(), phone = A.digits(form.elements.phone.value);
+    $("#ticket-card").hidden = true;
+    if (!name || phone.length < 10) { A.show(msg, "이름과 학부모 휴대폰번호를 모두 입력해 주세요."); return; }
+    if (!A.configured) { A.show(msg, "조회 시스템 준비 중입니다.", "err"); return; }
+    if (!S.ticketOpen) { A.show(msg, "지금은 수험표 조회 기간이 아닙니다." + (S.ticketPeriod ? " 교부 기간: " + A.esc(S.ticketPeriod) : "")); return; }
+    var btn = form.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "조회 중";
+    A.lookupKey(name, phone).then(function (key) {
+      return A.db.collection("lookup").doc(key).get();
+    }).then(function (doc) {
+      if (!doc.exists) {
+        A.show(msg, "입력한 정보와 일치하는 응시 내역이 없습니다. 이름과 번호를 다시 확인하고, 그래도 안 되면 사무국(<a href=\"tel:" + A.digits(S.tel) + "\">" + A.esc(S.tel) + "</a>)으로 문의해 주세요.", "err");
+        return;
+      }
+      A.hide(msg);
+      var r = doc.data();
+      $("#ticket").innerHTML = A.ticketHtml(r, S);
+      A.drawQrs($("#ticket"));
+      $("#ticket-card").hidden = false;
+      $("#ticket-card").scrollIntoView({ behavior: "smooth" });
+    }).catch(function (err) {
+      A.show(msg, "조회 서버에 연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.", "err");
+      console.error(err);
+    }).then(function () { btn.disabled = false; btn.textContent = "조회하기"; });
+  });
+
+  $("#save-img").addEventListener("click", function () {
+    var t = $("#ticket .ticket");
+    if (!t || !window.html2canvas) return;
+    html2canvas(t, { scale: 2, backgroundColor: "#fff" }).then(function (c) {
+      var a = document.createElement("a");
+      a.href = c.toDataURL("image/png");
+      a.download = "AMC수험표_" + ($("#ticket .no") || {}).textContent + ".png";
+      a.click();
+    });
+  });
+})();
+</script>
+</body>
+</html>

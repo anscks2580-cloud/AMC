@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>관리자 — AMC 수험표·출석</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="assets/css/amc.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="mark">AMC</span>관리자 <small data-user></small></a>
+    <nav>
+      <a href="admin.html">명단·설정</a>
+      <a href="scan.html">출석 스캔</a>
+      <a href="dashboard.html">출석 현황</a>
+      <a href="print.html">수험표 일괄출력</a>
+      <a href="#" data-logout>로그아웃</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <!-- 로그인 -->
+    <section class="card wrap-narrow" id="gate" style="margin:0 auto">
+      <h2>관리자 로그인</h2>
+      <p class="hint">AMC 위원회에서 발급한 관리자 계정으로 로그인하세요.</p>
+      <form class="form" id="login-form" style="margin-top:20px" novalidate>
+        <div class="form-row"><label for="email">이메일</label><input class="input" id="email" name="email" type="email" autocomplete="username" required></div>
+        <div class="form-row"><label for="pw">비밀번호</label><input class="input" id="pw" name="pw" type="password" autocomplete="current-password" required></div>
+        <button class="btn btn-block" type="submit">로그인</button>
+      </form>
+      <div class="alert" id="gate-msg" hidden></div>
+    </section>
+
+    <!-- 본문 -->
+    <div id="app" hidden>
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="list">응시자 명단</button>
+        <button role="tab" aria-selected="false" data-tab="upload">엑셀 업로드</button>
+        <button role="tab" aria-selected="false" data-tab="settings">회차 설정</button>
+      </div>
+
+      <!-- 명단 -->
+      <section data-panel="list">
+        <div class="stats" id="list-stats"></div>
+        <div class="card">
+          <div class="row row-between" style="margin-bottom:14px">
+            <input class="input" id="q" placeholder="이름·수험번호·학원 검색" style="max-width:320px">
+            <div class="row">
+              <button class="btn btn-line btn-sm" id="dl-xlsx">엑셀 다운로드</button>
+              <button class="btn btn-line btn-sm" id="add-one">1명 추가</button>
+              <button class="btn btn-warn btn-sm" id="del-all">전체 삭제</button>
+            </div>
+          </div>
+          <div class="table-wrap" style="max-height:70vh">
+            <table id="list-table">
+              <thead><tr><th>수험번호</th><th>성명</th><th>학년</th><th>학교</th><th>학부모 휴대폰</th><th>시험실</th><th>접수 학원</th><th>출석</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 업로드 -->
+      <section data-panel="upload" hidden>
+        <div class="card">
+          <h2>엑셀 업로드</h2>
+          <p class="hint">첫 행이 제목(이름, 학년, 학교, 학부모 휴대폰, 시험실, 접수 학원, 수험번호)인 엑셀·CSV 파일을 올리세요. 수험번호가 비어 있으면 자동으로 만듭니다.</p>
+          <label class="drop" id="drop" style="margin-top:16px">
+            <input type="file" id="file" accept=".xlsx,.xls,.csv">
+            파일을 여기에 끌어다 놓거나 눌러서 선택
+          </label>
+        </div>
+        <div class="card" id="map-card" hidden>
+          <h2>열 맞추기</h2>
+          <p class="hint">엑셀의 어느 열이 어떤 항목인지 확인하세요. 자동으로 맞춘 결과를 고칠 수 있습니다.</p>
+          <div id="map-rows" style="margin-top:14px"></div>
+          <div class="row" style="margin-top:16px">
+            <label class="row" style="gap:6px;font-size:14px"><input type="checkbox" id="opt-replace"> 기존 명단을 모두 지우고 새로 저장</label>
+          </div>
+          <div class="row" style="margin-top:14px">
+            <button class="btn" id="preview">미리보기</button>
+          </div>
+        </div>
+        <div class="card" id="preview-card" hidden>
+          <div class="row row-between">
+            <h2 style="margin:0">미리보기 <small class="hint" id="preview-count"></small></h2>
+            <button class="btn btn-ochre" id="save">Firestore에 저장</button>
+          </div>
+          <div class="alert" id="preview-msg" hidden></div>
+          <div class="table-wrap" style="margin-top:14px;max-height:60vh">
+            <table id="preview-table">
+              <thead><tr><th>수험번호</th><th>성명</th><th>학년</th><th>학교</th><th>학부모 휴대폰</th><th>시험실</th><th>접수 학원</th><th>상태</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 설정 -->
+      <section data-panel="settings" hidden>
+        <div class="card wrap-narrow" style="margin:0 auto;max-width:640px">
+          <h2>회차 설정</h2>
+          <p class="hint">수험표와 조회 화면에 표시되는 정보입니다.</p>
+          <form id="settings-form" style="margin-top:18px">
+            <div class="form-row"><label>회차 이름</label><input class="input" name="round"></div>
+            <div class="form-row"><label>시험일시</label><input class="input" name="examDate" placeholder="2026년 11월 15일(일) 오전 10:30"></div>
+            <div class="form-row"><label>시험장소</label><input class="input" name="place"></div>
+            <div class="form-row"><label>입실 안내</label><input class="input" name="checkIn"></div>
+            <div class="form-row"><label>수험표 교부 기간(표시용)</label><input class="input" name="ticketPeriod"></div>
+            <div class="form-row"><label>문의 전화</label><input class="input" name="tel"></div>
+            <div class="form-row"><label>주최</label><input class="input" name="host"></div>
+            <div class="form-row"><label>시험실 목록 (쉼표로 구분, 스캔 화면에서 선택)</label><input class="input" name="rooms" placeholder="1층 1반, 1층 2반, 2층 1반"></div>
+            <div class="form-row"><label class="row" style="gap:8px"><input type="checkbox" name="ticketOpen"> 학부모 수험표 조회 열기</label></div>
+            <button class="btn" type="submit">저장</button>
+            <div class="alert" id="settings-msg" hidden></div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>수험표 일괄출력 — AMC</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="assets/css/amc.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="print.html"><span class="mark">AMC</span>수험표 일괄출력 <small data-user></small></a>
+    <nav>
+      <a href="admin.html">명단·설정</a>
+      <a href="scan.html">출석 스캔</a>
+      <a href="dashboard.html">출석 현황</a>
+      <a href="#" data-logout>로그아웃</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <section class="card wrap-narrow" id="gate" style="margin:0 auto">
+      <h2>관리자 로그인</h2>
+      <form class="form" id="login-form" style="margin-top:20px" novalidate>
+        <div class="form-row"><label for="email">이메일</label><input class="input" id="email" name="email" type="email" autocomplete="username" required></div>
+        <div class="form-row"><label for="pw">비밀번호</label><input class="input" id="pw" name="pw" type="password" autocomplete="current-password" required></div>
+        <button class="btn btn-block" type="submit">로그인</button>
+      </form>
+      <div class="alert" id="gate-msg" hidden></div>
+    </section>
+
+    <div id="app" hidden>
+      <div class="card no-print">
+        <div class="row row-between">
+          <div class="row">
+            <select class="input" id="f-room" style="min-height:40px;padding:4px 10px;max-width:200px"><option value="">전체 시험실</option></select>
+            <select class="input" id="f-academy" style="min-height:40px;padding:4px 10px;max-width:220px"><option value="">전체 학원</option></select>
+            <span class="hint" id="count"></span>
+          </div>
+          <button class="btn" onclick="window.print()">인쇄 / PDF 저장</button>
+        </div>
+        <p class="hint" style="margin:10px 0 0">A4 한 장에 4장씩 나옵니다. 인쇄 창에서 배경 그래픽 인쇄를 켜 주세요. 접수 학원별로 묶어 인쇄하면 학원에 배부하기 편합니다.</p>
+      </div>
+      <div class="print-sheet" id="sheet"></div>
+    </div>
+  </div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var A = window.AMCApp, $ = A.$, esc = A.esc, db = A.db;
+  var students = [], S = {};
+  A.requireAdmin(function () {
+    A.loadSettings().then(function (s) { S = s; return db.collection("students").orderBy("examNo").get(); }).then(function (snap) {
+      students = snap.docs.map(function (d) { return d.data(); });
+      fill("#f-room", "room"); fill("#f-academy", "academy");
+      render();
+    });
+    $("#f-room").addEventListener("change", render);
+    $("#f-academy").addEventListener("change", render);
+  });
+  function fill(sel, key) {
+    var vals = {};
+    students.forEach(function (s) { if (s[key]) vals[s[key]] = 1; });
+    $(sel).innerHTML += Object.keys(vals).sort().map(function (v) { return '<option value="' + esc(v) + '">' + esc(v) + "</option>"; }).join("");
+  }
+  function render() {
+    var r = $("#f-room").value, a = $("#f-academy").value;
+    var list = students.filter(function (s) { return (!r || s.room === r) && (!a || s.academy === a); });
+    $("#count").textContent = list.length + "장";
+    $("#sheet").innerHTML = list.map(function (s) { return A.ticketHtml(s, S); }).join("");
+    A.drawQrs($("#sheet"));
+  }
+})();
+</script>
+</body>
+</html>

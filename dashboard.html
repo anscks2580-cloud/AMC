@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>출석 현황 — AMC</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="assets/css/amc.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="dashboard.html"><span class="mark">AMC</span>출석 현황 <small data-user></small></a>
+    <nav>
+      <a href="admin.html">명단·설정</a>
+      <a href="scan.html">출석 스캔</a>
+      <a href="dashboard.html">출석 현황</a>
+      <a href="print.html">수험표 일괄출력</a>
+      <a href="#" data-logout>로그아웃</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <section class="card wrap-narrow" id="gate" style="margin:0 auto">
+      <h2>관리자 로그인</h2>
+      <form class="form" id="login-form" style="margin-top:20px" novalidate>
+        <div class="form-row"><label for="email">이메일</label><input class="input" id="email" name="email" type="email" autocomplete="username" required></div>
+        <div class="form-row"><label for="pw">비밀번호</label><input class="input" id="pw" name="pw" type="password" autocomplete="current-password" required></div>
+        <button class="btn btn-block" type="submit">로그인</button>
+      </form>
+      <div class="alert" id="gate-msg" hidden></div>
+    </section>
+
+    <div id="app" hidden>
+      <div class="stats" id="stats"></div>
+
+      <div class="grid-2">
+        <section class="card">
+          <div class="row row-between"><h2>시험실별</h2><span class="hint" id="updated"></span></div>
+          <div class="table-wrap" style="margin-top:12px">
+            <table id="rooms"><thead><tr><th>시험실</th><th>응시</th><th>출석</th><th>미출석</th><th>출석률</th></tr></thead><tbody></tbody></table>
+          </div>
+        </section>
+        <section class="card">
+          <div class="row row-between">
+            <h2>미출석자 <small class="hint" id="absent-count"></small></h2>
+            <div class="row">
+              <select class="input" id="absent-room" style="min-height:36px;padding:4px 10px"><option value="">전체 시험실</option></select>
+              <button class="btn btn-line btn-sm" id="dl">엑셀 다운로드</button>
+            </div>
+          </div>
+          <div class="table-wrap" style="margin-top:12px;max-height:60vh">
+            <table id="absent"><thead><tr><th>수험번호</th><th>성명</th><th>학년</th><th>시험실</th><th>학부모 휴대폰</th><th>학원</th><th></th></tr></thead><tbody></tbody></table>
+          </div>
+        </section>
+      </div>
+
+      <section class="card">
+        <div class="row row-between"><h2>출석 기록</h2><input class="input" id="q" placeholder="이름·수험번호 검색" style="max-width:260px"></div>
+        <div class="table-wrap" style="margin-top:12px;max-height:60vh">
+          <table id="log"><thead><tr><th>시각</th><th>수험번호</th><th>성명</th><th>학년</th><th>배정 시험실</th><th>처리 시험실</th><th>방법</th><th>처리자</th><th></th></tr></thead><tbody></tbody></table>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var A = window.AMCApp, $ = A.$, esc = A.esc, db = A.db;
+  var students = [], attendance = {}, user;
+
+  A.requireAdmin(function (u) {
+    user = u;
+    db.collection("students").orderBy("examNo").onSnapshot(function (snap) { students = snap.docs.map(function (d) { return d.data(); }); render(); });
+    db.collection("attendance").onSnapshot(function (snap) { attendance = {}; snap.docs.forEach(function (d) { attendance[d.id] = d.data(); }); render(); });
+    $("#absent-room").addEventListener("change", render);
+    $("#q").addEventListener("input", render);
+    $("#dl").addEventListener("click", download);
+    document.addEventListener("click", function (e) {
+      var c = e.target.closest("[data-check]"), u = e.target.closest("[data-uncheck]");
+      if (c) {
+        var s = students.filter(function (x) { return x.examNo === c.dataset.check; })[0];
+        if (s && confirm(s.name + " 수기 출석 처리할까요?")) db.collection("attendance").doc(s.examNo).set({ examNo: s.examNo, name: s.name, grade: s.grade || "", room: s.room || "", scanRoom: "", method: "manual", by: user.email, checkedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      }
+      if (u && confirm("출석을 취소할까요?")) db.collection("attendance").doc(u.dataset.uncheck).delete();
+    });
+  });
+
+  function fmtPhone(p) { p = A.digits(p); return p.length === 11 ? p.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3") : p; }
+  function toMs(ts) { return ts && ts.toDate ? ts.toDate().getTime() : 0; }
+
+  function render() {
+    var present = students.filter(function (s) { return attendance[s.examNo]; }).length;
+    var rate = students.length ? Math.round(present / students.length * 100) : 0;
+    $("#stats").innerHTML =
+      '<div class="stat"><b>' + students.length + '</b><span>응시자</span></div>' +
+      '<div class="stat"><b style="color:var(--ok)">' + present + '</b><span>출석</span></div>' +
+      '<div class="stat"><b style="color:var(--warn)">' + (students.length - present) + '</b><span>미출석</span></div>' +
+      '<div class="stat"><b>' + rate + '%</b><span>출석률</span></div>';
+    $("#updated").textContent = "실시간 · " + A.fmtTime(new Date());
+
+    /* 시험실별 */
+    var rooms = {};
+    students.forEach(function (s) {
+      var r = s.room || "(미배정)";
+      rooms[r] = rooms[r] || { n: 0, p: 0 };
+      rooms[r].n++; if (attendance[s.examNo]) rooms[r].p++;
+    });
+    var keys = Object.keys(rooms).sort();
+    $("#rooms tbody").innerHTML = keys.map(function (r) {
+      var o = rooms[r];
+      return "<tr><td>" + esc(r) + '</td><td class="num">' + o.n + '</td><td class="num">' + o.p + '</td><td class="num">' + (o.n - o.p) + '</td><td class="num">' + Math.round(o.p / o.n * 100) + "%</td></tr>";
+    }).join("");
+    var sel = $("#absent-room"), cur = sel.value;
+    sel.innerHTML = '<option value="">전체 시험실</option>' + keys.map(function (r) { return '<option value="' + esc(r) + '"' + (r === cur ? " selected" : "") + ">" + esc(r) + "</option>"; }).join("");
+
+    /* 미출석 */
+    var absent = students.filter(function (s) { return !attendance[s.examNo] && (!sel.value || (s.room || "(미배정)") === sel.value); });
+    $("#absent-count").textContent = absent.length + "명";
+    $("#absent tbody").innerHTML = absent.map(function (s) {
+      return "<tr>" + ['<td class="num">' + esc(s.examNo) + "</td>", "<td>" + esc(s.name) + "</td>", "<td>" + esc(s.grade) + "</td>", "<td>" + esc(s.room) + "</td>", '<td class="num"><a href="tel:' + esc(s.phone) + '">' + esc(fmtPhone(s.phone)) + "</a></td>", "<td>" + esc(s.academy) + "</td>", '<td><button class="btn btn-line btn-sm" data-check="' + esc(s.examNo) + '">수기 출석</button></td>'].join("") + "</tr>";
+    }).join("") || '<tr><td colspan="7" style="text-align:center;color:var(--muted)">미출석자가 없습니다.</td></tr>';
+
+    /* 기록 */
+    var q = A.normName($("#q").value).toLowerCase();
+    var log = Object.keys(attendance).map(function (k) { return attendance[k]; })
+      .filter(function (a) { return !q || (a.name + a.examNo).toLowerCase().indexOf(q) !== -1; })
+      .sort(function (a, b) { return toMs(b.checkedAt) - toMs(a.checkedAt); });
+    $("#log tbody").innerHTML = log.map(function (a) {
+      var mis = a.scanRoom && a.room && a.scanRoom !== a.room;
+      return "<tr>" + ['<td class="num">' + A.fmtTime(a.checkedAt) + "</td>", '<td class="num">' + esc(a.examNo) + "</td>", "<td>" + esc(a.name) + "</td>", "<td>" + esc(a.grade) + "</td>", "<td>" + esc(a.room) + "</td>",
+        "<td>" + (mis ? '<span class="tag tag-warn">' + esc(a.scanRoom) + "</span>" : esc(a.scanRoom || "")) + "</td>",
+        "<td>" + (a.method === "manual" ? "수기" : "QR") + "</td>", "<td>" + esc(a.by) + "</td>",
+        '<td><button class="btn btn-line btn-sm" data-uncheck="' + esc(a.examNo) + '">취소</button></td>'].join("") + "</tr>";
+    }).join("") || '<tr><td colspan="9" style="text-align:center;color:var(--muted)">아직 출석 기록이 없습니다.</td></tr>';
+  }
+
+  function download() {
+    var rows = students.map(function (s) {
+      var at = attendance[s.examNo];
+      return { 수험번호: s.examNo, 성명: s.name, 학년: s.grade, 학교: s.school, 시험실: s.room, "학부모 휴대폰": fmtPhone(s.phone), "접수 학원": s.academy, 출석: at ? "출석" : "미출석", 시각: at ? A.fmtDateTime(at.checkedAt) : "", 방법: at ? (at.method === "manual" ? "수기" : "QR") : "", 처리자: at ? at.by : "" };
+    });
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "출석");
+    XLSX.writeFile(wb, "AMC_출석현황_" + A.fmtDateTime(new Date()).replace(/[^0-9]/g, "").slice(0, 12) + ".xlsx");
+  }
+})();
+</script>
+</body>
+</html>
