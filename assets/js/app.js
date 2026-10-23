@@ -78,7 +78,9 @@
     var def = Object.assign({}, window.AMC_DEFAULT || {});
     if (!db) return Promise.resolve(def);
     if (settingsCache) return Promise.resolve(settingsCache);
-    return db.collection("settings").doc("current").get().then(function (s) {
+    var timeout = new Promise(function (res) { setTimeout(function () { res(null); }, 4000); });
+    return Promise.race([db.collection("settings").doc("current").get(), timeout]).then(function (s) {
+      if (!s) return def;
       settingsCache = Object.assign(def, s.exists ? s.data() : {});
       return settingsCache;
     }).catch(function () { return def; });
