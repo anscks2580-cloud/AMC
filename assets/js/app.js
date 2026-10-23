@@ -17,7 +17,7 @@
   if (configured && window.firebase) {
     app = firebase.initializeApp(C);
     db = firebase.firestore();
-    auth = firebase.auth();
+    auth = typeof firebase.auth === "function" ? firebase.auth() : null;
     try { db.enablePersistence({ synchronizeTabs: true }).catch(function () {}); } catch (e) {}
   }
 
