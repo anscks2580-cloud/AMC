@@ -11,6 +11,26 @@
 
   var isAdmin = false, me = null, cfg = {}, results = [], academies = {}, acUsers = {}, confirms = {}, view = "";
 
+  /* ---------- 전체 화면 바둑판 배경 (포토부스) ---------- */
+  var BG_NAMES = ["가람스카이수학학원", "강의하는아이들", "대시나루국어학원", "대치레몬", "동일학원", "두드림창의수학학원", "리더스학원", "민단수학과학학원", "바른길수학학원", "백년대계학림학원", "생각이반짝창의수학", "송우찬수학학원", "수학이만드는세상학원", "스카이학원", "유수하수학학원", "주선생영수학학원", "지엔탑학원", "평촌다수인수학학원", "한빛주니어학원", "한빛학원", "G1230수학학원", "G1230안양캠퍼스", "JTD수학과학학원"];
+  function drawGrid() {
+    var g = $("#bg-grid"); if (!g) return;
+    var w = window.innerWidth, h = window.innerHeight;
+    var cols = w < 640 ? 4 : Math.max(5, Math.round(w / 165)), th = w < 640 ? 64 : 76, rows = Math.ceil(h / th) + 1;
+    g.style.gridTemplateColumns = "repeat(" + cols + ", 1fr)";
+    g.style.gridAutoRows = th + "px";
+    var html = "", k = 0;
+    for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++) {
+      if ((r + c) % 2 === 1) html += '<i class="d"><img src="assets/img/emblem.png" alt=""></i>';
+      else if (r % 2 === 0) html += '<i class="l">' + esc(BG_NAMES[(k++) % BG_NAMES.length]) + "</i>";
+      else html += '<i class="l en">AMC</i>';
+    }
+    g.innerHTML = html;
+  }
+  drawGrid();
+  var gridTimer;
+  window.addEventListener("resize", function () { clearTimeout(gridTimer); gridTimer = setTimeout(drawGrid, 150); });
+
   if (!A.configured || !auth) { A.show($("#gate-msg"), "Firebase 구성값이 비어 있습니다.", "err"); return; }
 
   /* ================= 로그인 ================= */
@@ -39,7 +59,7 @@
     if (started) return;
     started = true;
     $("#gate").hidden = true; $("#top-nav").hidden = false;
-    $("#booth").classList.add("compact");
+    $("#booth").classList.add("compact"); document.body.classList.add("logged");
     isAdmin = !A.isAcademyEmail(user.email);
     if (isAdmin) startAdmin(user); else startAcademy(user);
   });
@@ -56,6 +76,7 @@
       if (!d.exists) { showClosed("사용할 수 없는 계정입니다", "계정이 해제되었거나 아직 연결되지 않았습니다. AMC 위원회에 문의해 주세요."); return null; }
       me = d.data();
       $("[data-who]").textContent = me.name;
+      if (!me.pwChangedAt) openPw(true);
       return db.collection("settings").doc("results").get();
     }).then(function (s) {
       if (!s) return null;
@@ -83,6 +104,9 @@
   /* ================= 관리자 ================= */
   function startAdmin(user) {
     $("[data-who]").textContent = user.email === A.ADMIN_EMAIL ? "admin" : user.email;
+    if (user.email === A.ADMIN_EMAIL) {
+      db.collection("private").doc("admin").get().then(function (d) { if (!d.exists || !d.data().pwChangedAt) openPw(true); }).catch(function () {});
+    }
     $$("[data-admin-only]").forEach(function (el) { el.hidden = false; });
     $("#admin-tabs").hidden = false;
     $("#view").hidden = false;
@@ -423,24 +447,45 @@
     });
   }
 
-  /* ================= 비밀번호 변경 (원장님·admin 공용) ================= */
-  var modal = $("#pw-modal");
-  $("#open-pw").addEventListener("click", function (e) { e.preventDefault(); $("#pw-form").reset(); A.hide($("#pw-msg")); modal.hidden = false; });
-  $("#pw-cancel").addEventListener("click", function () { modal.hidden = true; });
-  modal.addEventListener("click", function (e) { if (e.target === modal) modal.hidden = true; });
+  /* ================= 비밀번호 변경 (원장님·admin 공용) =================
+     처음 로그인(아직 안 바꿈)이면 팝업이 닫히지 않고 바꿔야만 넘어감 */
+  var modal = $("#pw-modal"), forced = false;
+  function openPw(force) {
+    forced = !!force;
+    $("#pw-form").reset(); A.hide($("#pw-msg"));
+    $("#pw-force").hidden = !forced;
+    $("#pw-cancel").textContent = forced ? "로그아웃" : "닫기";
+    modal.hidden = false;
+    setTimeout(function () { var el = $("#pw-form").elements.cur; if (el) el.focus(); }, 50);
+  }
+  $("#open-pw").addEventListener("click", function (e) { e.preventDefault(); openPw(forced); });
+  $("#pw-cancel").addEventListener("click", function () {
+    if (forced) { auth.signOut().then(function () { location.reload(); }); return; }
+    modal.hidden = true;
+  });
+  modal.addEventListener("click", function (e) { if (e.target === modal && !forced) modal.hidden = true; });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !forced) modal.hidden = true; });
   $("#pw-form").addEventListener("submit", function (e) {
     e.preventDefault();
     var f = e.target, cur = f.elements.cur.value, nx = f.elements.next.value, nx2 = f.elements.next2.value;
     if (nx !== nx2) { A.show($("#pw-msg"), "새 비밀번호가 서로 다릅니다.", "err"); return; }
     if (nx.length < 8 || !/[A-Za-z]/.test(nx) || !/[0-9]/.test(nx)) { A.show($("#pw-msg"), "영문과 숫자를 섞어 8자 이상으로 정해 주세요.", "err"); return; }
+    if (nx === cur) { A.show($("#pw-msg"), "안내받은 비밀번호와 다른 비밀번호로 정해 주세요.", "err"); return; }
     var user = auth.currentUser, btn = f.querySelector("button[type=submit]");
     btn.disabled = true;
     user.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(user.email, cur)).then(function () {
       return user.updatePassword(nx);
     }).then(function () {
       if (!isAdmin) return db.collection("academyUsers").doc(user.uid).update({ pwChangedAt: FV() }).catch(function () {});
+      if (user.email === A.ADMIN_EMAIL) return db.collection("private").doc("admin").set({ pwChangedAt: FV(), initialPw: firebase.firestore.FieldValue.delete() }, { merge: true }).catch(function () {});
     }).then(function () {
-      A.show($("#pw-msg"), "비밀번호를 바꿨습니다. 다음 로그인부터 새 비밀번호를 쓰세요.", "ok"); f.reset();
+      if (me) me.pwChangedAt = true;
+      var wasForced = forced;
+      forced = false;
+      $("#pw-force").hidden = true; $("#pw-cancel").textContent = "닫기";
+      f.reset();
+      A.show($("#pw-msg"), "비밀번호를 바꿨습니다. 다음 로그인부터 새 비밀번호를 쓰세요.", "ok");
+      if (wasForced) setTimeout(function () { modal.hidden = true; }, 1200);
     }).catch(function (err) {
       A.show($("#pw-msg"), /wrong-password|invalid-credential|INVALID_LOGIN/i.test(err.code + err.message) ? "현재 비밀번호가 맞지 않습니다." : "변경하지 못했습니다. (" + esc(err.code) + ")", "err");
     }).then(function () { btn.disabled = false; });

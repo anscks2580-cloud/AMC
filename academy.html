@@ -5,39 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>성적·시상 조회 — AMC 안양시 수학경시대회</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="assets/css/amc.css?v=202611241610">
+<link rel="stylesheet" href="assets/css/amc.css?v=202611241710">
 </head>
 <body class="booth-theme">
 
-<header class="top">
-  <div class="wrap">
-    <a class="brand" href="academy.html"><span class="mark">AMC</span>성적·시상 조회 <small data-who></small></a>
-    <nav id="top-nav" hidden>
-      <a href="admin.html" data-admin-only hidden>명단·출석</a>
-      <a href="#" id="open-pw">비밀번호 변경</a>
-      <a href="#" id="logout">로그아웃</a>
-    </nav>
-  </div>
-</header>
+<!-- 전체 화면 바둑판 배경 -->
+<div class="bg-grid" id="bg-grid" aria-hidden="true"></div>
+
+<!-- 로그인 후 오른쪽 위 메뉴 -->
+<nav class="user-bar" id="top-nav" hidden>
+  <b data-who></b>
+  <a href="admin.html" data-admin-only hidden>명단·출석</a>
+  <a href="#" id="open-pw">비밀번호 변경</a>
+  <a href="#" id="logout">로그아웃</a>
+</nav>
 
 <main>
   <div class="wrap">
 
 <section class="booth" id="booth">
-  <div class="booth-top"><span>2026.11.15</span><span>신성중학교</span></div>
-  <p class="booth-en">2026 ANYANG MATH CONTEST</p>
-  <h1 class="booth-title">제 2회 안양시 수학경시대회</h1>
-  <div class="booth-org">
-    <span><b>출제</b> 지학사 풍산자 수학연구소</span><span><b>주최</b> 안양시 학원연합회</span>
-    <span><b>주관</b> 안양시 학원연합회 보습분과 협의회</span><span><b>협찬</b> 안양시, 지학사</span>
-  </div>
-  <div class="booth-band">
-    <div class="booth-tiles" aria-hidden="true"><i class="l">지학사</i><i class="d"><img src="assets/img/emblem.png" alt=""></i><i class="l">지학사</i><i class="d"><img src="assets/img/emblem.png" alt=""></i><i class="l">지학사</i><i class="d"><img src="assets/img/emblem.png" alt=""></i><i class="l">지학사</i><i class="d"><img src="assets/img/emblem.png" alt=""></i><i class="l en">AMC</i><i class="d"><img src="assets/img/emblem.png" alt=""></i><i class="l en">AMC</i><i class="d"><img src="assets/img/emblem.png" alt=""></i><i class="l en">AMC</i><i class="d"><img src="assets/img/emblem.png" alt=""></i></div>
-    <div class="booth-logo">
-      <img src="assets/img/amc-logo.png" alt="AMC">
-      <p>성적·시상 조회</p>
-      <small>당신의 꿈을 응원합니다</small>
+  <div class="booth-head">
+    <div class="booth-top"><span>2026.11.15</span></div>
+    <p class="booth-en">2026 ANYANG MATH CONTEST</p>
+    <h1 class="booth-title">제 2회 안양시 수학경시대회</h1>
+    <div class="booth-org">
+      <span><b>출제</b> 지학사 풍산자 수학연구소</span><span><b>주최</b> 안양시 학원연합회</span>
+      <span><b>주관</b> 안양시 학원연합회 보습분과 협의회</span><span><b>협찬</b> 안양시, 지학사</span>
     </div>
+  </div>
+  <div class="booth-logo">
+    <img src="assets/img/amc-logo.png" alt="AMC">
+    <p>성적·시상 조회</p>
+    <small>당신의 꿈을 응원합니다</small>
   </div>
 </section>
 
@@ -165,6 +164,7 @@
 <div class="modal" id="pw-modal" hidden>
   <div class="modal-box card">
     <h2>비밀번호 변경</h2>
+    <p class="alert" id="pw-force" hidden style="margin:10px 0 0">처음 로그인하셨습니다. 안내받은 비밀번호를 원장님만 아는 새 비밀번호로 바꿔야 조회할 수 있습니다.</p>
     <p class="hint">영문과 숫자를 섞어 8자 이상으로 정해 주세요.</p>
     <form id="pw-form" style="margin-top:16px" novalidate>
       <div class="form-row"><label>현재 비밀번호</label><input class="input" name="cur" type="password" autocomplete="current-password" required></div>
@@ -183,9 +183,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="assets/js/config.js?v=202611241610"></script>
-<script src="assets/js/app.js?v=202611241610"></script>
-<script src="assets/js/results-common.js?v=202611241610"></script>
-<script src="assets/js/academy.js?v=202611241610"></script>
+<script src="assets/js/config.js?v=202611241710"></script>
+<script src="assets/js/app.js?v=202611241710"></script>
+<script src="assets/js/results-common.js?v=202611241710"></script>
+<script src="assets/js/academy.js?v=202611241710"></script>
 </body>
 </html>
