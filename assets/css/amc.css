@@ -220,3 +220,69 @@ code.pw { font-size: 15px; font-weight: 700; letter-spacing: .05em; background: 
   .result-table .sticky-col { position: static; box-shadow: none; }
   .mk { min-width: 16px; height: 16px; line-height: 16px; font-size: 10px; }
 }
+.grade-card { padding: 20px; }
+.grade-h { font-size: 18px; margin-bottom: 12px; }
+.result-table small.key { color: var(--ok); font-weight: 700; }
+.result-table th.q { font-size: 12px; white-space: normal; max-width: 80px; line-height: 1.3; }
+.stat-sm b { font-size: 22px; }
+.confirm-box:empty { display: none; }
+.confirm { margin-top: 16px; display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; border: 2px solid var(--ochre); background: var(--ochre-soft); border-radius: var(--radius); padding: 14px 18px; }
+.confirm b { display: block; font-size: 16px; }
+.confirm span { font-size: 14px; color: var(--muted); }
+.confirm.done { border-color: var(--ok); background: var(--ok-soft); }
+.confirm.done b { color: var(--ok); }
+@media print { .grade-card { break-inside: auto; } .confirm-box { display: none; } }
+
+/* ---------- AMC 포토부스 테마 (성적·시상 조회) ---------- */
+body.booth-theme {
+  --navy: #1f2a4a; --navy-2: #2d3b63; --navy-ink: #161e36;
+  --sky: #e0edf9; --tile: #9ec3e0; --tile-ink: #6f9cc2; --cyan: #7fd3da;
+  --bg: #e0edf9; --line: #cddcec; --line-strong: #a9c2dc;
+  background: var(--sky);
+}
+.booth-theme .top { background: var(--navy); border-top: 6px solid transparent; border-image: repeating-linear-gradient(90deg, #6f86a8 0 2px, transparent 2px 5px) 6; }
+.booth-theme .card { border-color: var(--line); box-shadow: 0 1px 0 rgba(31,42,74,.04); }
+.booth-theme .tabs { border-bottom-color: var(--tile); }
+.booth-theme .stat { border-color: var(--line); }
+.booth-theme .stat b { color: var(--navy); }
+.booth { text-align: center; margin: -8px 0 24px; }
+.booth-top { display: flex; justify-content: space-between; font-size: 14px; color: #3d4b6b; padding: 0 4px 6px; }
+.booth-en { margin: 0 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .5em; color: var(--navy); }
+.booth-title {
+  display: inline-block; margin: 0 auto; padding: 6px 48px; border: 2px solid var(--cyan);
+  color: var(--navy); font-size: clamp(24px, 4.4vw, 42px); font-weight: 900; letter-spacing: -.01em; line-height: 1.25;
+}
+.booth-org { display: grid; grid-template-columns: repeat(2, auto); justify-content: center; gap: 2px 36px; margin: 12px 0 20px; font-size: 13px; color: #2c3a5c; text-align: left; }
+.booth-org b { font-weight: 700; margin-right: 6px; padding-right: 8px; border-right: 1px solid #8ea3c0; }
+.booth-band { position: relative; border-radius: 4px; overflow: hidden; }
+.booth-tiles { display: grid; grid-template-columns: repeat(7, 1fr); }
+.booth-tiles i { font-style: normal; height: 74px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; }
+.booth-tiles i.l { background: var(--sky); color: #9dbbd8; border: 1px solid #d3e3f3; }
+.booth-tiles i.d { background: var(--tile); color: #e9f2fb; }
+.booth-tiles i:nth-child(14n+2), .booth-tiles i:nth-child(14n+4), .booth-tiles i:nth-child(14n+6) { font-style: italic; letter-spacing: .02em; }
+.booth-logo {
+  position: absolute; inset: 0; margin: auto; width: min(380px, 62%); height: 100%;
+  background: var(--sky); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.booth-logo img { width: min(220px, 80%); }
+.booth-logo p { margin: 4px 0 0; font-weight: 900; font-size: 18px; color: var(--navy); letter-spacing: .02em; }
+.booth-logo small { font-size: 13px; color: #3d4b6b; }
+/* 로그인 후: 작게 */
+.booth.compact .booth-org, .booth.compact .booth-top { display: none; }
+.booth.compact .booth-title { font-size: clamp(20px, 3vw, 28px); padding: 4px 28px; }
+.booth.compact .booth-en { font-size: 11px; }
+.booth.compact .booth-band { margin-top: 12px; }
+.booth.compact .booth-tiles i { height: 40px; font-size: 12px; }
+.booth.compact .booth-tiles i:nth-child(n+8) { display: none; }
+.booth.compact .booth-logo { flex-direction: row; gap: 14px; }
+.booth.compact .booth-logo img { width: 92px; }
+.booth.compact .booth-logo p { margin: 0; font-size: 15px; }
+.booth.compact .booth-logo small { display: none; }
+@media (max-width: 640px) {
+  .booth-title { padding: 6px 16px; }
+  .booth-org { grid-template-columns: auto; gap: 2px; }
+  .booth-tiles { grid-template-columns: repeat(5, 1fr); }
+  .booth-tiles i:nth-child(7n+6), .booth-tiles i:nth-child(7n) { display: none; }
+  .booth-logo { width: 72%; }
+}
+@media print { .booth { display: none; } }

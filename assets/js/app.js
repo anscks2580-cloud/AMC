@@ -69,6 +69,14 @@
   function academyEmail(name) {
     return sha256("AMC-ACADEMY|" + academyId(name)).then(function (h) { return "ac" + h.slice(0, 24) + "@" + ACADEMY_DOMAIN; });
   }
+  /* 관리자 아이디 admin → 전용 이메일. 이메일을 그대로 넣으면 기존 관리자 계정으로 로그인 */
+  var ADMIN_EMAIL = "admin@amc-admin.fanmath.co.kr";
+  function loginEmail(id) {
+    id = String(id || "").trim();
+    if (id.toLowerCase() === "admin") return Promise.resolve(ADMIN_EMAIL);
+    if (id.indexOf("@") !== -1) return Promise.resolve(id);
+    return academyEmail(id);
+  }
   function isAcademyEmail(email) { return String(email || "").toLowerCase().slice(-(ACADEMY_DOMAIN.length + 1)) === "@" + ACADEMY_DOMAIN; }
   /* 초기 비밀번호: 영문 소문자 4자 + 숫자 4자 (헷갈리는 l, o, i 제외) */
   function randomPassword() {
@@ -123,7 +131,7 @@
         e.preventDefault();
         var btn = form.querySelector("button[type=submit]");
         btn.disabled = true;
-        auth.signInWithEmailAndPassword(form.elements.email.value.trim(), form.elements.pw.value)
+        loginEmail(form.elements.email.value).then(function (em) { return auth.signInWithEmailAndPassword(em, form.elements.pw.value); })
           .catch(function (err) {
             var msg = /password|credential|user-not-found/i.test(err.code) ? "이메일 또는 비밀번호가 맞지 않습니다." : "로그인하지 못했습니다. (" + err.code + ")";
             show($("#gate-msg"), msg, "err");
@@ -138,7 +146,7 @@
       if (user && isAcademyEmail(user.email)) {
         /* 학원 원장 계정은 관리자 화면에 들어올 수 없음 */
         auth.signOut();
-        show($("#gate-msg"), '학원 원장님 계정은 <a href="academy.html" style="text-decoration:underline">학원 성적 조회</a> 화면을 이용해 주세요.', "err");
+        show($("#gate-msg"), '학원 원장님 계정은 <a href="academy.html" style="text-decoration:underline">성적·시상 조회</a> 화면을 이용해 주세요.', "err");
         return;
       }
       if (user) {
@@ -206,7 +214,7 @@
     configured: configured, db: db, auth: auth, fb: window.firebase,
     esc: esc, $: $, $$: $$, digits: digits, normName: normName, normGrade: normGrade, gradeCode: gradeCode,
     pad: pad, fmtPhone: fmtPhone, fmtTime: fmtTime, fmtDateTime: fmtDateTime, randomToken: randomToken, sha256: sha256, lookupKey: lookupKey,
-    ACADEMY_DOMAIN: ACADEMY_DOMAIN, academyId: academyId, academyEmail: academyEmail, isAcademyEmail: isAcademyEmail, randomPassword: randomPassword,
+    ACADEMY_DOMAIN: ACADEMY_DOMAIN, ADMIN_EMAIL: ADMIN_EMAIL, loginEmail: loginEmail, academyId: academyId, academyEmail: academyEmail, isAcademyEmail: isAcademyEmail, randomPassword: randomPassword,
     show: show, hide: hide, qrText: qrText, parseQr: parseQr,
     loadSettings: loadSettings, requireAdmin: requireAdmin, ticketHtml: ticketHtml, drawQrs: drawQrs
   };

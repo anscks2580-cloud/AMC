@@ -1,2 +1,4 @@
 .firebase/
 *.log
+tools/*.json
+tools/*.csv

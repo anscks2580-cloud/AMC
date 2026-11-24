@@ -54,6 +54,21 @@ service cloud.firestore {
       allow read, write: if admin();
     }
 
+    // 원장님 시상 내용 확인: 원장님은 자기 학원 것만 남길 수 있음
+    match /confirms/{academyId} {
+      allow read: if admin() || (academyUser() && academyId == myAcademy());
+      allow create, update: if admin()
+        || (academyUser() && academyId == myAcademy()
+            && request.resource.data.keys().hasOnly(['confirmedAt', 'name', 'uid'])
+            && request.resource.data.uid == request.auth.uid);
+      allow delete: if admin();
+    }
+
+    // 관리자 전용 보관(admin 아이디 초기 비밀번호 등)
+    match /private/{doc} {
+      allow read, write: if admin();
+    }
+
     // 원장 계정 연결 정보: 관리자는 전체, 원장님은 본인 것만 읽고 비밀번호 변경 시각만 고칠 수 있음
     match /academyUsers/{uid} {
       allow read: if admin() || (academyUser() && request.auth.uid == uid);

@@ -9,8 +9,8 @@
 | `print.html` | 수험표 일괄 인쇄(시험실·학원별) | 관리자 |
 | `scan.html` | 감독관 휴대폰 카메라로 QR 출석 처리, 수기 출석 | 관리자 |
 | `dashboard.html` | 실시간 출석 현황, 미출석자, 기록, 엑셀 다운로드 | 관리자 |
-| `results.html` | 성적 엑셀 업로드, 전체 성적, 학원 계정 발급·재발급·해제, 조회 열기/닫기 | 관리자 |
-| `academy.html` | 원장님 성적 조회(자기 학원 학생만): 이름·문항별 정오표·총점·상장, 엑셀·인쇄, 비밀번호 변경 | 학원 원장 |
+| `academy.html` | 성적·시상 조회 포털. 원장님(아이디=학원 이름)은 자기 학원 학생만 보고 「시상 내용 확인」을 누름. 관리자(아이디 admin)는 학원별 보기·확인 현황·학원 계정·성적 업로드·조회 설정 | 원장·관리자 |
+| `tools/upload.js` | PC에서 반영하기.bat 로 실행: 테스트 데이터 백업·삭제, 성적 등록, 학원·admin 계정 발급 | — |
 
 ## 처음 설정
 
@@ -29,6 +29,8 @@
 - `settings/results` — 성적 조회 설정 (resultsOpen, title, notice, labels[문항 번호])
 - `academies/{학원ID}` — 학원 계정 원부, 관리자 전용 (name, email, uid, initialPw, revoked)
 - `academyUsers/{uid}` — 원장 계정 연결 (academyId, name, email, pwChangedAt)
+- `confirms/{학원ID}` — 원장님 시상 내용 확인 (confirmedAt, name, uid)
+- `private/admin` — admin 아이디 초기 비밀번호 (관리자 전용)
 
 ## 학원 원장 계정
 

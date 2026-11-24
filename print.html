@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>수험표 일괄출력 — AMC</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="assets/css/amc.css?v=202611241500">
+<link rel="stylesheet" href="assets/css/amc.css?v=202611241550">
 </head>
 <body>
 
@@ -16,7 +16,7 @@
       <a href="admin.html">명단·설정</a>
       <a href="scan.html">출석 스캔</a>
       <a href="dashboard.html">출석 현황</a>
-      <a href="results.html">성적·학원계정</a>
+      <a href="academy.html">성적·시상</a>
       <a href="#" data-logout>로그아웃</a>
     </nav>
   </div>
@@ -27,7 +27,7 @@
     <section class="card wrap-narrow" id="gate" style="margin:0 auto">
       <h2>관리자 로그인</h2>
       <form class="form" id="login-form" style="margin-top:20px" novalidate>
-        <div class="form-row"><label for="email">이메일</label><input class="input" id="email" name="email" type="email" autocomplete="username" required></div>
+        <div class="form-row"><label for="email">아이디</label><input class="input" id="email" name="email" autocomplete="username" placeholder="admin 또는 이메일" required></div>
         <div class="form-row"><label for="pw">비밀번호</label><input class="input" id="pw" name="pw" type="password" autocomplete="current-password" required></div>
         <button class="btn btn-block" type="submit">로그인</button>
       </form>
@@ -55,8 +55,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="assets/js/config.js?v=202611241500"></script>
-<script src="assets/js/app.js?v=202611241500"></script>
+<script src="assets/js/config.js?v=202611241550"></script>
+<script src="assets/js/app.js?v=202611241550"></script>
 <script>
 (function () {
   var A = window.AMCApp, $ = A.$, esc = A.esc, db = A.db;

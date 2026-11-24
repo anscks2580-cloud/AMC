@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>출석 스캔 — AMC</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="assets/css/amc.css?v=202611241500">
+<link rel="stylesheet" href="assets/css/amc.css?v=202611241550">
 <style>
   main { padding: 16px 0 40px; }
   .top nav a { padding: 6px 8px; font-size: 13px; }
@@ -29,7 +29,7 @@
     <section class="card wrap-narrow" id="gate" style="margin:0 auto">
       <h2>감독관 로그인</h2>
       <form class="form" id="login-form" style="margin-top:20px" novalidate>
-        <div class="form-row"><label for="email">이메일</label><input class="input" id="email" name="email" type="email" autocomplete="username" required></div>
+        <div class="form-row"><label for="email">아이디</label><input class="input" id="email" name="email" autocomplete="username" placeholder="admin 또는 이메일" required></div>
         <div class="form-row"><label for="pw">비밀번호</label><input class="input" id="pw" name="pw" type="password" autocomplete="current-password" required></div>
         <button class="btn btn-block" type="submit">로그인</button>
       </form>
@@ -69,8 +69,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-<script src="assets/js/config.js?v=202611241500"></script>
-<script src="assets/js/app.js?v=202611241500"></script>
+<script src="assets/js/config.js?v=202611241550"></script>
+<script src="assets/js/app.js?v=202611241550"></script>
 <script>
 (function () {
   var A = window.AMCApp, $ = A.$, $$ = A.$$, esc = A.esc, db = A.db;
