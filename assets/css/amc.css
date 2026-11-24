@@ -322,3 +322,18 @@ body.booth-theme { position: relative; overflow-x: hidden; }
 .booth-theme .tabs { background: var(--sky); border-radius: 6px 6px 0 0; padding: 0 8px; box-shadow: 0 0 0 1px rgba(134,193,224,.5); }
 a.ac-name { color: var(--navy); text-decoration: underline; text-decoration-color: var(--tile); text-underline-offset: 3px; }
 a.ac-name:hover { text-decoration-color: var(--navy); }
+/* 상장별 숫자 상자: 이름이 길어도 한 줄 */
+.stats { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.stat-award { padding: 14px 14px; }
+.stat-award span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.stat-award .lbl-s { font-size: 12px; }
+.stat-award .lbl-xs { font-size: 10.5px; letter-spacing: -.02em; }
+.result-table.plain th, .result-table.plain td { white-space: nowrap; }
+@media (max-width: 640px) {
+  .stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .stat { padding: 10px 12px; }
+  .stat b { font-size: 22px; }
+  .stat-award { padding: 10px 8px 10px 10px; }
+  .stat-award .lbl-s { font-size: 11px; }
+  .stat-award .lbl-xs { font-size: 9.5px; letter-spacing: -.03em; }
+}

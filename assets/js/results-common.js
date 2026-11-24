@@ -19,6 +19,13 @@
     return i === -1 ? 500 : i;
   }
 
+  /* 상장마다 다른 색 [배경, 글자] */
+  var AWARD_COLORS = [
+    ["#fff1c9", "#9a6b00"], ["#efe6ff", "#6b3fb5"], ["#ffe3e3", "#c0392b"], ["#e1e8ff", "#2c3e8f"], ["#d9f5f1", "#0f7d6f"],
+    ["#dff0ff", "#1f6fb2"], ["#ece9ff", "#4a43b0"], ["#ffe9d6", "#b85d10"], ["#e2f5e6", "#2f7d3e"], ["#f0ece6", "#6b5d4f"]
+  ];
+  function awardColor(a) { var i = awardIdx(a); return AWARD_COLORS[i] || ["#eef1f5", "#5a6375"]; }
+
   function sortResults(list) {
     return list.slice().sort(function (a, b) {
       return gradeIdx(a.grade) - gradeIdx(b.grade)
@@ -49,48 +56,46 @@
   }
   function awardHtml(a) {
     if (!a) return '<span class="tag tag-no">-</span>';
-    var i = awardIdx(a);
-    return '<span class="tag ' + (i <= 2 ? "tag-gold" : i < 500 ? "tag-ok" : "tag-no") + '">' + esc(a) + "</span>";
+    var c = awardColor(a);
+    return '<span class="tag" style="background:' + c[0] + ";color:" + c[1] + '">' + esc(a) + "</span>";
   }
 
-  /* 학년별 표 묶음 그리기 */
+  /* 학년별 표 묶음 그리기 — 상장·인증까지만 */
   function renderGrades(box, list, keysByGrade, opts) {
     opts = opts || {};
-    keysByGrade = keysByGrade || {};
     var groups = {};
     list.forEach(function (r) { (groups[r.grade] = groups[r.grade] || []).push(r); });
     var grades = Object.keys(groups).sort(function (a, b) { return gradeIdx(a) - gradeIdx(b); });
     if (!grades.length) { box.innerHTML = '<div class="card"><p class="hint" style="margin:0;text-align:center">조회된 학생이 없습니다.</p></div>'; return; }
     box.innerHTML = grades.map(function (g) {
-      var rows = groups[g], labels = rows[0].labels || [], keys = keysByGrade[g] || [];
-      var hasKey = keys.some(function (k) { return k !== "" && k != null; }) || rows.some(function (r) { return r.marks && r.marks.length; });
-      var head = '<tr><th class="sticky-col">성명</th><th>수험번호</th><th>학교</th>' + (opts.academy ? "<th>학원</th>" : "") +
-        '<th>총점</th><th>상장</th><th>인증</th>' + (hasKey ? '<th class="q">맞은 수</th>' : "") +
-        labels.map(function (l, i) { return '<th class="q">' + esc(l) + (keys[i] ? '<br><small class="key">' + esc(keys[i]) + "</small>" : "") + "</th>"; }).join("") + "</tr>";
+      var rows = groups[g];
+      var head = '<tr><th>성명</th><th>수험번호</th><th>학교</th>' + (opts.academy ? "<th>학원</th>" : "") + "<th>총점</th><th>상장</th><th>인증</th></tr>";
       var body = rows.map(function (r) {
-        var cc = correctCount(r, keys);
         return "<tr>" +
-          '<td class="sticky-col"><b>' + esc(r.name) + "</b>" + (r.entry === "개인접수" ? ' <small class="hint">개인</small>' : "") + "</td>" +
+          "<td><b>" + esc(r.name) + "</b></td>" +
           '<td class="num">' + esc(r.examNo) + "</td><td>" + esc(r.school) + "</td>" +
           (opts.academy ? "<td>" + (r.academyId ? esc(r.academy) : '<span class="hint">개인' + (r.appliedVia ? " · " + esc(r.appliedVia) : "") + "</span>") + "</td>" : "") +
           '<td class="num"><b>' + esc(r.total) + "</b></td><td>" + awardHtml(r.award) + "</td>" +
-          "<td>" + (r.cert ? '<span class="tag ' + (r.cert === "인증" ? "tag-ok" : "tag-no") + '">' + esc(r.cert) + "</span>" : "") + "</td>" +
-          (hasKey ? '<td class="q num">' + (cc == null ? "" : cc + "/" + labels.length) + "</td>" : "") +
-          labels.map(function (l, i) { return '<td class="q">' + ansCell((r.answers || [])[i], markOf(r, i, keys)) + "</td>"; }).join("") +
+          "<td>" + (r.cert ? '<span class="tag ' + (r.cert === "인증" ? "tag-ok" : "tag-warn") + '">' + esc(r.cert) + "</span>" : "") + "</td>" +
         "</tr>";
       }).join("");
       return '<div class="card grade-card"><h3 class="grade-h">' + esc(g) + ' <small class="hint">' + rows.length + "명</small></h3>" +
-        '<div class="table-wrap result-wrap"><table class="result-table"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div></div>";
+        '<div class="table-wrap result-wrap"><table class="result-table plain"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div></div>";
     }).join("");
   }
 
   function statsHtml(list) {
-    var awards = {};
-    list.forEach(function (r) { if (r.award) awards[r.award] = (awards[r.award] || 0) + 1; });
+    var awards = {}, cert = 0, uncert = 0;
+    list.forEach(function (r) {
+      if (r.award) awards[r.award] = (awards[r.award] || 0) + 1;
+      if (r.cert === "인증") cert++; else if (r.cert) uncert++;
+    });
     var keys = Object.keys(awards).sort(function (a, b) { return awardIdx(a) - awardIdx(b); });
+    function label(t) { var n = t.length; return '<span class="' + (n > 12 ? "lbl-xs" : n > 8 ? "lbl-s" : "") + '">' + esc(t) + "</span>"; }
     return '<div class="stat"><b>' + list.length + '</b><span>응시 학생</span></div>' +
-      '<div class="stat"><b>' + list.filter(function (r) { return r.award; }).length + '</b><span>수상</span></div>' +
-      keys.map(function (k) { return '<div class="stat stat-sm"><b>' + awards[k] + "</b><span>" + esc(k) + "</span></div>"; }).join("");
+      '<div class="stat"><b style="color:var(--ok)">' + cert + '</b><span>인증</span></div>' +
+      '<div class="stat"><b style="color:var(--warn)">' + uncert + '</b><span>미인증</span></div>' +
+      keys.map(function (k) { var c = awardColor(k); return '<div class="stat stat-sm stat-award" style="border-left:4px solid ' + c[1] + ";background:" + c[0] + '"><b style="color:' + c[1] + '">' + awards[k] + "</b>" + label(k) + "</div>"; }).join("");
   }
 
   function filterOptions(list) {
@@ -102,31 +107,19 @@
     };
   }
 
-  /* 엑셀 내보내기: 첫 시트 「전체」에 모든 학생, 그다음 학년별 문항 정오표 시트 */
+  /* 엑셀 내보내기: 한 시트, 상장·인증까지만 */
   function exportXlsx(list, keysByGrade, filename, opts) {
     opts = opts || {};
-    var wb = XLSX.utils.book_new(), groups = {}, sorted = sortResults(list);
-    var base = ["수험번호", "성명", "학년", "학교"].concat(opts.academy ? ["학원"] : []).concat(["접수", "총점", "상장", "인증", "맞은 수"]);
-    function baseRow(r) {
-      var cc = correctCount(r, (keysByGrade || {})[r.grade] || []);
-      return [r.examNo || "", r.name, r.grade || "", r.school || ""].concat(opts.academy ? [r.academyId ? r.academy : "개인접수" + (r.appliedVia ? " (" + r.appliedVia + ")" : "")] : [])
-        .concat([r.entry || "", isNaN(Number(r.total)) || r.total === "" ? r.total : Number(r.total), r.award || "", r.cert || "", cc == null ? "" : cc + "/" + (r.labels || []).length]);
-    }
-    var all = [base].concat(sorted.map(baseRow));
-    var ws = XLSX.utils.aoa_to_sheet(all);
-    ws["!cols"] = base.map(function (h) { return { wch: h === "상장" ? 26 : h === "학교" || h === "학원" ? 18 : 10 }; });
-    XLSX.utils.book_append_sheet(wb, ws, "전체 " + sorted.length + "명");
-    sorted.forEach(function (r) { (groups[r.grade] = groups[r.grade] || []).push(r); });
-    Object.keys(groups).sort(function (a, b) { return gradeIdx(a) - gradeIdx(b); }).forEach(function (g) {
-      var rows = groups[g], labels = rows[0].labels || [], keys = (keysByGrade || {})[g] || [];
-      var aoa = [base.concat(labels.map(String))].concat(rows.map(function (r) {
-        return baseRow(r).concat(labels.map(function (l, i) {
-          var a = (r.answers || [])[i] || "", m = markOf(r, i, keys);
-          return m === "X" ? (a ? a + " ✕" : "✕") : a;
-        }));
-      }));
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), g + " 정오표 " + rows.length + "명");
-    });
+    var sorted = sortResults(list);
+    var base = ["수험번호", "성명", "학년", "학교"].concat(opts.academy ? ["학원"] : []).concat(["총점", "상장", "인증"]);
+    var aoa = [base].concat(sorted.map(function (r) {
+      return [r.examNo || "", r.name, r.grade || "", r.school || ""]
+        .concat(opts.academy ? [r.academyId ? r.academy : "개인접수" + (r.appliedVia ? " (" + r.appliedVia + ")" : "")] : [])
+        .concat([isNaN(Number(r.total)) || r.total === "" ? r.total : Number(r.total), r.award || "", r.cert || ""]);
+    }));
+    var wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = base.map(function (h) { return { wch: h === "상장" ? 28 : h === "학교" || h === "학원" ? 20 : 10 }; });
+    XLSX.utils.book_append_sheet(wb, ws, "성적·시상 " + sorted.length + "명");
     XLSX.writeFile(wb, filename);
   }
 
