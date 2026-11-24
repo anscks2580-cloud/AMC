@@ -246,7 +246,8 @@ body.booth-theme {
 .booth-theme .stat { border-color: var(--line); }
 .booth-theme .stat b { color: var(--navy); }
 /* 전체 화면 바둑판 */
-.bg-grid { position: fixed; inset: 0; z-index: 0; display: grid; overflow: hidden; background: var(--sky); pointer-events: none; }
+body.booth-theme { position: relative; overflow-x: hidden; }
+.bg-grid { position: absolute; left: 0; right: 0; top: 0; z-index: 0; display: grid; overflow: hidden; background: var(--sky); pointer-events: none; }
 .bg-grid i { font-style: normal; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 8px; font-weight: 800; font-size: 13px; line-height: 1.25; word-break: break-all; overflow: hidden; }
 .bg-grid i.l { background: var(--sky); color: #8fc3e2; }
 .bg-grid i.d { background: var(--tile); }
@@ -254,8 +255,8 @@ body.booth-theme {
 .bg-grid i.en { font-style: italic; letter-spacing: .02em; font-size: 15px; }
 .booth-theme main, .booth-theme .modal { position: relative; z-index: 1; }
 .booth-theme .modal { position: fixed; z-index: 50; }
-.booth-theme main { padding-top: 28px; }
-.booth-theme.logged main { padding-top: 64px; }
+.booth-theme main { padding-top: 0; }
+.booth-theme.logged main { padding-top: 0; }
 
 /* 오른쪽 위 메뉴 */
 .user-bar { position: fixed; top: 12px; right: 14px; z-index: 20; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: flex-end;
@@ -266,7 +267,10 @@ body.booth-theme {
 
 /* 포토부스 머리 */
 .booth { text-align: center; margin: 0 auto 22px; }
-.booth-head { background: var(--sky); padding: 14px 24px 16px; border-radius: 4px; box-shadow: 0 0 0 1px rgba(134,193,224,.5); }
+/* 화면 끝까지 꽉 찬 띠 (포토부스 윗부분) */
+.booth-head { position: relative; background: var(--sky); margin: 0 calc(50% - 50vw); padding: 22px calc(50vw - 50% + 20px) 22px; }
+.booth-head::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 7px;
+  background: repeating-linear-gradient(90deg, #5d6f92 0 2px, transparent 2px 5px); opacity: .75; }
 .booth-top { display: flex; justify-content: space-between; font-size: 14px; color: #3d4b6b; padding-bottom: 2px; }
 .booth-en { margin: 0 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .5em; color: var(--navy); }
 .booth-title {
@@ -285,18 +289,17 @@ body.booth-theme {
 /* 로그인 후: 작게 */
 .booth.compact { margin-bottom: 18px; }
 .booth.compact .booth-org, .booth.compact .booth-top, .booth.compact .booth-logo { display: none; }
-.booth.compact .booth-head { padding: 12px 20px; }
+.booth.compact .booth-head { padding-top: 20px; padding-bottom: 14px; }
 .booth.compact .booth-title { font-size: clamp(20px, 3vw, 28px); padding: 4px 28px; }
 .booth.compact .booth-en { font-size: 11px; }
 @media (max-width: 640px) {
-  .booth-head { padding: 12px 12px 14px; }
+  .booth-head { padding-top: 18px; padding-bottom: 16px; }
   .booth-title { padding: 6px 14px; }
   .booth-org { grid-template-columns: auto; gap: 2px; }
   .bg-grid i { font-size: 11px; padding: 0 4px; }
   .bg-grid i.en { font-size: 12px; }
   .booth-en { letter-spacing: .25em; font-size: 11px; }
   .user-bar { top: 6px; right: 6px; left: 6px; border-radius: 12px; }
-  .booth-theme main { padding-top: 22px; }
-  .booth-theme.logged main { padding-top: 70px; }
+  .booth.compact .booth-head { padding-top: 64px; }
 }
 @media print { .booth, .bg-grid, .user-bar { display: none !important; } }

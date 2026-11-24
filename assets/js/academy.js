@@ -13,10 +13,18 @@
 
   /* ---------- 전체 화면 바둑판 배경 (포토부스) ---------- */
   var BG_NAMES = ["가람스카이수학학원", "강의하는아이들", "대시나루국어학원", "대치레몬", "동일학원", "두드림창의수학학원", "리더스학원", "민단수학과학학원", "바른길수학학원", "백년대계학림학원", "생각이반짝창의수학", "송우찬수학학원", "수학이만드는세상학원", "스카이학원", "유수하수학학원", "주선생영수학학원", "지엔탑학원", "평촌다수인수학학원", "한빛주니어학원", "한빛학원", "G1230수학학원", "G1230안양캠퍼스", "JTD수학과학학원"];
+  /* 바둑판은 윗부분 띠 바로 아래에서 시작해 페이지 끝까지 (함께 스크롤) */
+  var gridKey = "";
   function drawGrid() {
-    var g = $("#bg-grid"); if (!g) return;
-    var w = window.innerWidth, h = window.innerHeight;
-    var cols = w < 640 ? 4 : Math.max(5, Math.round(w / 165)), th = w < 640 ? 64 : 76, rows = Math.ceil(h / th) + 1;
+    var g = $("#bg-grid"), head = document.querySelector(".booth-head"), main = document.querySelector("main"); if (!g || !head) return;
+    var w = document.documentElement.clientWidth;
+    var top = Math.round(head.getBoundingClientRect().bottom + window.scrollY);
+    var bottom = Math.max(window.innerHeight, Math.round(main.getBoundingClientRect().bottom + window.scrollY));
+    var cols = w < 640 ? 4 : Math.max(5, Math.round(w / 165)), th = w < 640 ? 64 : 76, rows = Math.ceil((bottom - top) / th);
+    g.style.top = top + "px"; g.style.height = (bottom - top) + "px";
+    var key = cols + "x" + rows;
+    if (key === gridKey) return;
+    gridKey = key;
     g.style.gridTemplateColumns = "repeat(" + cols + ", 1fr)";
     g.style.gridAutoRows = th + "px";
     var html = "", k = 0;
@@ -29,7 +37,10 @@
   }
   drawGrid();
   var gridTimer;
-  window.addEventListener("resize", function () { clearTimeout(gridTimer); gridTimer = setTimeout(drawGrid, 150); });
+  function regrid() { clearTimeout(gridTimer); gridTimer = setTimeout(drawGrid, 120); }
+  window.addEventListener("resize", regrid);
+  window.addEventListener("load", regrid);
+  if (window.ResizeObserver) new ResizeObserver(regrid).observe(document.querySelector("main"));
 
   if (!A.configured || !auth) { A.show($("#gate-msg"), "Firebase 구성값이 비어 있습니다.", "err"); return; }
 
