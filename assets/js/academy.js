@@ -283,9 +283,9 @@
         '<div class="stat"><b>' + personal + '</b><span>개인접수 학생 (관리자만)</span></div>' +
       "</div>" +
       '<div class="card fold-card">' +
-        '<details class="fold"><summary><span class="dot dot-ok"></span>확인 완료 <b>' + done.length + "곳</b><small>펼치기</small></summary>" + chips(done, true) + "</details>" +
-        '<details class="fold"' + (todo.length && todo.length <= 30 ? "" : "") + '><summary><span class="dot dot-warn"></span>확인 미완료 <b>' + todo.length + "곳</b><small>펼치기</small></summary>" + chips(todo, false) + "</details>" +
-        (empty.length ? '<details class="fold"><summary><span class="dot"></span>학원접수 학생 없음 <b>' + empty.length + "곳</b><small>계정만 있음 · 집계 제외</small></summary>" + '<div class="chips">' + empty.map(function (a) { return '<span class="chip chip-gray">' + esc(a.name) + "</span>"; }).join("") + "</div></details>" : "") +
+        '<details class="fold"><summary><span class="dot dot-ok"></span>확인 완료 <b>' + done.length + "곳</b><small><span class='d-only'>펼치기</span></small></summary>" + chips(done, true) + "</details>" +
+        '<details class="fold"' + (todo.length && todo.length <= 30 ? "" : "") + '><summary><span class="dot dot-warn"></span>확인 미완료 <b>' + todo.length + "곳</b><small><span class='d-only'>펼치기</span></small></summary>" + chips(todo, false) + "</details>" +
+        (empty.length ? '<details class="fold"><summary><span class="dot"></span>학원접수 학생 없음 <b>' + empty.length + "곳</b><small><span class='d-only'>계정만 있음 · 집계 제외 </span></small></summary>" + '<div class="chips">' + empty.map(function (a) { return '<span class="chip chip-gray">' + esc(a.name) + "</span>"; }).join("") + "</div></details>" : "") +
       "</div>";
     /* 펼쳐 둔 줄은 새로 그려도 펼친 채로 */
     ["#status-summary", "#home-summary"].forEach(function (sel) {
@@ -302,8 +302,8 @@
         : '<button class="btn btn-line btn-sm" data-reset="' + esc(r.id) + '">비밀번호 재발급</button> <button class="btn btn-line btn-sm" data-revoke="' + esc(r.id) + '">해제</button>';
       act = (st === "none" ? "" : '<button class="btn btn-ochre btn-sm" data-msg="' + esc(r.id) + '">안내 문자</button> ') + '<button class="btn btn-line btn-sm" data-see="' + esc(r.id) + '">보기</button> ' + act;
       var conf = r.students === 0 ? '<span class="tag tag-no">학생 없음</span>' : c ? '<span class="tag tag-ok">확인</span> <small class="hint">' + esc(fmt(c.confirmedAt)) + "</small>" : '<span class="tag tag-warn">미확인</span>';
-      return '<tr><td><a href="#" class="ac-name" data-msg="' + esc(r.id) + '"><b>' + esc(r.name) + '</b></a><br><small class="hint">아이디: ' + esc(r.id) + "</small></td>" +
-        '<td class="num">' + r.students + "</td><td>" + conf + "</td><td>" + stHtml + "</td><td>" + pw + "</td><td>" + act + "</td></tr>";
+      return '<tr><td class="a-name"><a href="#" class="ac-name" data-msg="' + esc(r.id) + '"><b>' + esc(r.name) + '</b></a><br><small class="hint">아이디: ' + esc(r.id) + "</small></td>" +
+        '<td class="num a-cnt"><span class="m-only">학생 </span>' + r.students + '<span class="m-only">명</span></td><td class="a-conf">' + conf + '</td><td class="a-st">' + stHtml + '</td><td class="a-pw">' + pw + '</td><td class="a-act">' + act + "</td></tr>";
     }).join("") || '<tr><td colspan="6" style="text-align:center;color:var(--muted)">성적을 먼저 올리세요.</td></tr>';
   }
   function seeAcademy(id) {

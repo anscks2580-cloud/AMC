@@ -90,11 +90,11 @@
       var head = '<tr><th>성명</th><th>수험번호</th><th>학교</th>' + (opts.academy ? "<th>학원</th>" : "") + "<th>총점</th><th>상장</th><th>인증</th></tr>";
       var body = rows.map(function (r) {
         return "<tr>" +
-          "<td><b>" + esc(r.name) + "</b></td>" +
-          '<td class="num">' + esc(r.examNo) + "</td><td>" + esc(r.school) + "</td>" +
-          (opts.academy ? "<td>" + (r.academyId ? esc(r.academy) : '<span class="hint">개인' + (r.appliedVia ? " · " + esc(r.appliedVia) : "") + "</span>") + "</td>" : "") +
-          '<td class="num"><b>' + esc(r.total) + "</b></td><td>" + awardHtml(r.award) + "</td>" +
-          "<td>" + (r.cert ? '<span class="tag ' + (r.cert === "인증" ? "tag-ok" : "tag-warn") + '">' + esc(r.cert) + "</span>" : "") + "</td>" +
+          '<td class="c-name"><b>' + esc(r.name) + "</b></td>" +
+          '<td class="num c-no">' + esc(r.examNo) + '</td><td class="c-school">' + esc(r.school) + "</td>" +
+          (opts.academy ? '<td class="c-ac">' + (r.academyId ? esc(r.academy) : '<span class="hint">개인' + (r.appliedVia ? " · " + esc(r.appliedVia) : "") + "</span>") + "</td>" : "") +
+          '<td class="num c-total"><b>' + esc(r.total) + '</b><span class="m-only">점</span></td><td class="c-award">' + awardHtml(r.award) + "</td>" +
+          '<td class="c-cert">' + (r.cert ? '<span class="tag ' + (r.cert === "인증" ? "tag-ok" : "tag-warn") + '">' + esc(r.cert) + "</span>" : "") + "</td>" +
         "</tr>";
       }).join("");
       return '<div class="card grade-card"><h3 class="grade-h">' + esc(g) + ' <small class="hint">' + rows.length + "명</small></h3>" +

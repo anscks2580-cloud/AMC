@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>성적·시상 조회 — AMC 안양시 수학경시대회</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="assets/css/amc.css?v=202611242030">
+<link rel="stylesheet" href="assets/css/amc.css?v=202611242045">
 </head>
 <body class="booth-theme">
 
@@ -75,10 +75,10 @@
             <h2 id="ac-title" style="margin:0"></h2>
             <p class="hint" id="round-title" style="margin:4px 0 0"></p>
           </div>
-          <div class="row no-print">
+          <div class="row no-print view-actions">
             <button class="btn btn-ochre btn-sm" id="open-guide">상격별 시상 확인하기</button>
             <button class="btn btn-line btn-sm" id="dl-xlsx">엑셀 다운로드</button>
-            <button class="btn btn-line btn-sm" onclick="window.print()">인쇄</button>
+            <button class="btn btn-line btn-sm d-only" onclick="window.print()">인쇄</button>
           </div>
         </div>
         <div class="alert" id="notice" hidden style="margin-top:14px"></div>
@@ -88,7 +88,7 @@
       <div class="stats" id="stats"></div>
 
       <div class="card no-print" style="padding:16px 20px">
-        <div class="row">
+        <div class="row filter-row">
           <select class="input" id="f-grade" style="max-width:150px"></select>
           <select class="input" id="f-award" style="max-width:240px"></select>
           <input class="input" id="q" placeholder="이름·수험번호·학교 검색" style="max-width:240px">
@@ -107,7 +107,7 @@
             <h2 style="margin:0">학원 계정</h2>
             <p class="hint" style="margin:4px 0 0">아이디는 학원 이름(띄어쓰기 무시), 비밀번호는 영문 4자+숫자 4자 난수입니다. 학원 이름이나 「안내 문자」를 누르면 원장님께 보낼 문자가 나오고, 「복사하기」로 바로 복사됩니다.</p>
           </div>
-          <div class="row">
+          <div class="row ac-actions">
             <button class="btn btn-line btn-sm" id="ac-xlsx">계정·확인 현황 엑셀</button>
             <button class="btn btn-warn btn-sm" id="ac-reset-all">전체 비밀번호 재발급</button>
             <button class="btn btn-ochre btn-sm" id="ac-make-all">계정 없는 학원 모두 발급</button>
@@ -206,9 +206,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="assets/js/config.js?v=202611242030"></script>
-<script src="assets/js/app.js?v=202611242030"></script>
-<script src="assets/js/results-common.js?v=202611242030"></script>
-<script src="assets/js/academy.js?v=202611242030"></script>
+<script src="assets/js/config.js?v=202611242045"></script>
+<script src="assets/js/app.js?v=202611242045"></script>
+<script src="assets/js/results-common.js?v=202611242045"></script>
+<script src="assets/js/academy.js?v=202611242045"></script>
 </body>
 </html>

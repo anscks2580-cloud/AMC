@@ -344,3 +344,68 @@ a.ac-name:hover { text-decoration-color: var(--navy); }
 .guide-box img { width: 100%; height: auto; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
 .guide-close { position: sticky; top: 0; float: right; margin: 0 0 8px; border: 1px solid rgba(214,174,92,.6); background: rgba(20,16,10,.85); color: #f0d48a; border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 14px; cursor: pointer; z-index: 2; }
 .guide-close:hover { background: #2a2216; }
+
+/* ================= 모바일 최적화 ================= */
+.m-only { display: none; }
+@media (max-width: 640px) {
+  .m-only { display: inline; }
+  .d-only { display: none !important; }
+  .wrap { padding: 0 12px; }
+  .card { padding: 18px 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 19px; }
+  .booth-theme .user-bar { position: absolute; }
+  .booth-title { font-size: 21px; padding: 5px 14px; white-space: nowrap; }
+  .booth-logo img { width: 78%; }
+
+  /* 버튼 줄: 한 줄에 꽉 차게 */
+  .view-actions, .ac-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .view-actions .btn, .ac-actions .btn { width: 100%; padding: 0 6px; white-space: nowrap; }
+  .ac-actions .btn:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .filter-row .input { max-width: none !important; width: 100%; }
+  .filter-row #q { grid-column: 1 / -1; }
+  #pick-academy { max-width: none !important; width: 100%; }
+
+  /* 요약 접기 줄 */
+  .fold summary { font-size: 15px; gap: 8px; white-space: nowrap; }
+  .fold summary b { font-size: 16px; }
+  .fold .chips { gap: 6px; }
+
+  /* 학생 표 → 학생별 카드 */
+  .grade-card { padding: 14px 12px; }
+  .result-wrap { border: 0; max-height: none !important; overflow: visible; }
+  .result-table.plain thead { display: none; }
+  .result-table.plain, .result-table.plain tbody { display: block; }
+  .result-table.plain tr { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "name total" "award cert" "meta meta";
+    gap: 4px 8px; padding: 10px 2px; border-bottom: 1px solid var(--line); }
+  .result-table.plain tr:last-child { border-bottom: 0; }
+  .result-table.plain td { display: block; padding: 0; border: 0; white-space: normal; background: none; }
+  .result-table.plain .c-name { grid-area: name; font-size: 16px; }
+  .result-table.plain .c-total { grid-area: total; text-align: right; font-size: 15px; }
+  .result-table.plain .c-award { grid-area: award; min-width: 0; }
+  .result-table.plain .c-award .tag { white-space: normal; line-height: 1.35; }
+  .result-table.plain .c-cert { grid-area: cert; text-align: right; }
+  .result-table.plain .c-no, .result-table.plain .c-school, .result-table.plain .c-ac { grid-area: meta; font-size: 12px; color: var(--muted); }
+  .result-table.plain .c-no { justify-self: start; }
+  .result-table.plain .c-school { justify-self: start; padding-left: 74px; }
+  .result-table.plain .c-ac { grid-row: 4; grid-column: 1 / -1; }
+
+  /* 학원 계정 표 → 학원별 카드 */
+  #ac-table { min-width: 0; }
+  #ac-table thead { display: none; }
+  #ac-table, #ac-table tbody { display: block; }
+  .table-wrap:has(#ac-table) { border: 0; max-height: none !important; overflow: visible; margin-top: 10px !important; }
+  #ac-table tr { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 12px 2px; border-bottom: 1px solid var(--line); }
+  #ac-table td { display: block; padding: 0; border: 0; white-space: normal; }
+  #ac-table .a-name { width: 100%; }
+  #ac-table .a-cnt { font-size: 13px; color: var(--muted); }
+  #ac-table .a-pw:empty { display: none; }
+  #ac-table .a-act { width: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+  #ac-table .a-act .btn { flex: 1 1 auto; }
+
+  /* 팝업 */
+  .modal { padding: 12px; }
+  .modal-box { padding: 18px 16px; }
+  #msg-text { font-size: 13px; }
+  .stats { margin-bottom: 14px; }
+}
