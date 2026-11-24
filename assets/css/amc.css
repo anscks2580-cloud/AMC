@@ -275,11 +275,13 @@ body.booth-theme {
 }
 .booth-org { display: grid; grid-template-columns: repeat(2, auto); justify-content: center; gap: 2px 36px; margin: 12px 0 0; font-size: 13px; color: #2c3a5c; text-align: left; }
 .booth-org b { font-weight: 700; margin-right: 6px; padding-right: 8px; border-right: 1px solid #8ea3c0; }
-.booth-logo { width: min(440px, 100%); margin: 18px auto 0; background: var(--tile); padding: 18px 20px 14px; border-radius: 4px;
-  display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.booth-logo img { width: min(250px, 80%); }
-.booth-logo p { margin: 6px 0 0; font-weight: 900; font-size: 18px; color: var(--navy); }
-.booth-logo small { font-size: 13px; color: #2c3a5c; }
+.booth-logo { position: relative; margin: 22px auto 4px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.booth-logo::before { content: ""; position: absolute; left: 50%; top: 46%; width: min(620px, 130%); height: 150%; transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse at center, rgba(218,238,250,.97) 0%, rgba(218,238,250,.9) 38%, rgba(218,238,250,0) 70%); z-index: -1; pointer-events: none; }
+.booth-logo img { width: min(360px, 82%); filter: drop-shadow(0 6px 12px rgba(31,42,74,.18)); }
+.booth-logo p { margin: 0; line-height: 1.35; }
+.booth-logo p b { display: block; font-weight: 900; font-size: 18px; color: var(--navy); }
+.booth-logo p span { display: block; font-size: 12px; color: #3d4b6b; }
 /* 로그인 후: 작게 */
 .booth.compact { margin-bottom: 18px; }
 .booth.compact .booth-org, .booth.compact .booth-top, .booth.compact .booth-logo { display: none; }
