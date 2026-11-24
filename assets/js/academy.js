@@ -269,7 +269,7 @@
           (withTime ? " · " + esc(fmt(confirms[a.id].confirmedAt).slice(5)) : "") + "</button>";
       }).join("") + "</div>" : '<p class="hint" style="margin:0">없음</p>';
     }
-    $("#status-summary").innerHTML =
+    var summaryHtml =
       '<div class="stats">' +
         '<div class="stat"><b>' + list.length + '</b><span>전체 학원</span></div>' +
         '<div class="stat"><b style="color:var(--ok)">' + done.length + '</b><span>확인 완료</span></div>' +
@@ -281,6 +281,12 @@
         '<details class="fold"' + (todo.length && todo.length <= 30 ? "" : "") + '><summary><span class="dot dot-warn"></span>확인 미완료 <b>' + todo.length + "곳</b><small>펼치기</small></summary>" + chips(todo, false) + "</details>" +
         (empty.length ? '<details class="fold"><summary><span class="dot"></span>학원접수 학생 없음 <b>' + empty.length + "곳</b><small>계정만 있음 · 집계 제외</small></summary>" + '<div class="chips">' + empty.map(function (a) { return '<span class="chip chip-gray">' + esc(a.name) + "</span>"; }).join("") + "</div></details>" : "") +
       "</div>";
+    /* 펼쳐 둔 줄은 새로 그려도 펼친 채로 */
+    ["#status-summary", "#home-summary"].forEach(function (sel) {
+      var box = $(sel), open = $$("details.fold", box).map(function (d) { return d.open; });
+      box.innerHTML = summaryHtml;
+      $$("details.fold", box).forEach(function (d, i) { if (open[i]) d.open = true; });
+    });
     $("#ac-table tbody").innerHTML = list.concat(empty).map(function (r) {
       var st = acState(r.id), a = academies[r.id] || {}, c = confirms[r.id];
       var stHtml = { none: '<span class="tag tag-no">미발급</span>', issued: '<span class="tag tag-ok">발급됨</span>', changed: '<span class="tag tag-gold">원장님 변경함</span>', revoked: '<span class="tag tag-warn">해제됨</span>' }[st];
@@ -299,8 +305,10 @@
     $$("[data-tab]")[0].click(); window.scrollTo(0, 0);
   }
   function bindStatus() {
-    $("#status-summary").addEventListener("click", function (e) {
-      var b = e.target.closest("[data-see]"); if (b) seeAcademy(b.dataset.see);
+    ["#status-summary", "#home-summary"].forEach(function (sel) {
+      $(sel).addEventListener("click", function (e) {
+        var b = e.target.closest("[data-see]"); if (b) seeAcademy(b.dataset.see);
+      });
     });
     $("#ac-table").addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (!b) return;

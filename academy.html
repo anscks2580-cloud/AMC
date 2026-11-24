@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>성적·시상 조회 — AMC 안양시 수학경시대회</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="assets/css/amc.css?v=202611241830">
+<link rel="stylesheet" href="assets/css/amc.css?v=202611241840">
 </head>
 <body class="booth-theme">
 
@@ -59,13 +59,14 @@
     <!-- 관리자 메뉴 -->
     <div class="tabs" id="admin-tabs" role="tablist" hidden>
       <button role="tab" aria-selected="true" data-tab="view">학원별 보기</button>
-      <button role="tab" aria-selected="false" data-tab="status">확인 현황·학원 계정</button>
+      <button role="tab" aria-selected="false" data-tab="status">학원 계정</button>
       <button role="tab" aria-selected="false" data-tab="upload">성적 업로드</button>
       <button role="tab" aria-selected="false" data-tab="settings">조회 설정</button>
     </div>
 
     <!-- 학원 화면 (원장님 화면 = 관리자 「학원별 보기」) -->
     <section data-panel="view" id="view" hidden>
+      <div id="home-summary" data-admin-only hidden></div>
       <div class="card">
         <div class="row row-between">
           <div>
@@ -100,12 +101,12 @@
 
     <!-- 관리자: 확인 현황·학원 계정 -->
     <section data-panel="status" hidden>
-      <div id="status-summary"></div>
+      <div id="status-summary" hidden></div>
       <div class="card">
         <div class="row row-between">
           <div>
-            <h2 style="margin:0">확인 현황·학원 계정</h2>
-            <p class="hint" style="margin:4px 0 0">아이디는 학원 이름(띄어쓰기 무시), 비밀번호는 영문 4자+숫자 4자 난수입니다. 원장님이 「시상 내용 확인」을 누르면 확인 시각이 표시됩니다.</p>
+            <h2 style="margin:0">학원 계정</h2>
+            <p class="hint" style="margin:4px 0 0">아이디는 학원 이름(띄어쓰기 무시), 비밀번호는 영문 4자+숫자 4자 난수입니다. 원장님이 비밀번호를 바꾸면 「원장님 변경함」으로 바뀌고 초기 비밀번호는 더 이상 보이지 않습니다.</p>
           </div>
           <div class="row">
             <button class="btn btn-line btn-sm" id="ac-xlsx">계정·확인 현황 엑셀</button>
@@ -181,9 +182,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="assets/js/config.js?v=202611241830"></script>
-<script src="assets/js/app.js?v=202611241830"></script>
-<script src="assets/js/results-common.js?v=202611241830"></script>
-<script src="assets/js/academy.js?v=202611241830"></script>
+<script src="assets/js/config.js?v=202611241840"></script>
+<script src="assets/js/app.js?v=202611241840"></script>
+<script src="assets/js/results-common.js?v=202611241840"></script>
+<script src="assets/js/academy.js?v=202611241840"></script>
 </body>
 </html>
