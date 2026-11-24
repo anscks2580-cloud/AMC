@@ -187,3 +187,36 @@ td.num { font-variant-numeric: tabular-nums; }
 .drop.on { border-color: var(--focus); background: #eef4ff; }
 .drop input { display: none; }
 .map-row { display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 14px; }
+
+/* ---------- 성적 조회 ---------- */
+.tag-gold { background: var(--ochre-soft); color: var(--ochre-deep); }
+.mk { display: inline-block; min-width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 4px; font-size: 12px; font-weight: 800; color: var(--muted); }
+.mk-o { background: var(--ok-soft); color: var(--ok); }
+.mk-x { background: var(--warn-soft); color: var(--warn); }
+.mk-e { color: var(--line-strong); }
+.legend .mk { margin: 0 2px 0 8px; }
+.legend .mk:first-child { margin-left: 0; }
+.result-wrap { max-height: 72vh; }
+.result-table th.q, .result-table td.q { text-align: center; padding: 8px 4px; min-width: 30px; }
+.result-table .sticky-col { position: sticky; left: 0; background: var(--paper); z-index: 1; box-shadow: 1px 0 0 var(--line); }
+.result-table th.sticky-col { background: var(--bg); z-index: 2; }
+.result-table tbody tr:hover td { background: #f7f9fc; }
+.q-cols { display: flex; flex-wrap: wrap; gap: 6px; max-height: 220px; overflow: auto; padding: 10px; border: 1px solid var(--line); border-radius: 6px; }
+.q-col { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; background: #fff; cursor: pointer; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 13px; padding: 3px 10px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+.chip-warn { background: var(--warn-soft); color: var(--warn); }
+code.pw { font-size: 15px; font-weight: 700; letter-spacing: .05em; background: var(--bg); padding: 2px 8px; border-radius: 4px; }
+.modal { position: fixed; inset: 0; background: rgba(19,32,58,.45); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+.modal-box { width: 100%; max-width: 420px; margin: 0; }
+@media print {
+  .top, .no-print, .tabs { display: none !important; }
+  body { background: #fff; }
+  main { padding: 0; }
+  .card, .stat { border: 0; padding: 0; margin-bottom: 10px; }
+  .result-wrap { max-height: none; overflow: visible; border: 0; }
+  .result-table { font-size: 10px; }
+  .result-table th, .result-table td { padding: 3px 4px; }
+  .result-table .sticky-col { position: static; box-shadow: none; }
+  .mk { min-width: 16px; height: 16px; line-height: 16px; font-size: 10px; }
+}

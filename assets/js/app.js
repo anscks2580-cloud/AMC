@@ -6,6 +6,10 @@
    students/{examNo}       응시자 { examNo, name, grade, school, phone, room, academy, token, createdAt }
    lookup/{sha256(이름|휴대폰)}  학생·학부모 조회용 사본 (examNo, name, grade, room, token)
    attendance/{examNo}     출석 { examNo, name, room, checkedAt, by, method: "qr"|"manual" }
+   results/{문서ID}         성적 { examNo, name, grade, school, academy, academyId, marks[], total, award, rank }
+   settings/results        성적 조회 설정 { resultsOpen, labels[], title, notice }
+   academies/{academyId}   학원 계정 원부(관리자 전용) { name, email, uid, initialPw, createdAt }
+   academyUsers/{uid}      학원 원장 계정 { academyId, name, email, pwChangedAt }
    ========================================================= */
 (function () {
   "use strict";
@@ -56,6 +60,24 @@
     });
   }
   function lookupKey(name, phone) { return sha256(normName(name) + "|" + digits(phone)); }
+
+  /* ---------- 학원 원장 계정 ----------
+     아이디는 학원 이름. 실제 Firebase 계정은 학원 이름으로 만든 고정 이메일을 씁니다.
+     이 도메인의 계정은 관리자 권한이 없고 자기 학원 성적만 볼 수 있습니다(firestore.rules). */
+  var ACADEMY_DOMAIN = "amc.fanmath.co.kr";
+  function academyId(name) { return normName(name); }
+  function academyEmail(name) {
+    return sha256("AMC-ACADEMY|" + academyId(name)).then(function (h) { return "ac" + h.slice(0, 24) + "@" + ACADEMY_DOMAIN; });
+  }
+  function isAcademyEmail(email) { return String(email || "").toLowerCase().slice(-(ACADEMY_DOMAIN.length + 1)) === "@" + ACADEMY_DOMAIN; }
+  /* 초기 비밀번호: 영문 소문자 4자 + 숫자 4자 (헷갈리는 l, o, i 제외) */
+  function randomPassword() {
+    var L = "abcdefghjkmnpqrstuvwxyz", D = "23456789", arr = new Uint8Array(8), out = "";
+    crypto.getRandomValues(arr);
+    for (var i = 0; i < 4; i++) out += L[arr[i] % L.length];
+    for (var j = 4; j < 8; j++) out += D[arr[j] % D.length];
+    return out;
+  }
 
   function show(box, html, tone) {
     if (!box) return;
@@ -113,6 +135,12 @@
     });
     var started = false;
     auth.onAuthStateChanged(function (user) {
+      if (user && isAcademyEmail(user.email)) {
+        /* 학원 원장 계정은 관리자 화면에 들어올 수 없음 */
+        auth.signOut();
+        show($("#gate-msg"), '학원 원장님 계정은 <a href="academy.html" style="text-decoration:underline">학원 성적 조회</a> 화면을 이용해 주세요.', "err");
+        return;
+      }
       if (user) {
         if (gate) gate.hidden = true;
         if (appEl) appEl.hidden = false;
@@ -178,6 +206,7 @@
     configured: configured, db: db, auth: auth, fb: window.firebase,
     esc: esc, $: $, $$: $$, digits: digits, normName: normName, normGrade: normGrade, gradeCode: gradeCode,
     pad: pad, fmtPhone: fmtPhone, fmtTime: fmtTime, fmtDateTime: fmtDateTime, randomToken: randomToken, sha256: sha256, lookupKey: lookupKey,
+    ACADEMY_DOMAIN: ACADEMY_DOMAIN, academyId: academyId, academyEmail: academyEmail, isAcademyEmail: isAcademyEmail, randomPassword: randomPassword,
     show: show, hide: hide, qrText: qrText, parseQr: parseQr,
     loadSettings: loadSettings, requireAdmin: requireAdmin, ticketHtml: ticketHtml, drawQrs: drawQrs
   };

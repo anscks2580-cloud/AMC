@@ -1,9 +1,25 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function admin() { return request.auth != null; }
 
-    // 회차 설정: 누구나 읽기, 관리자만 쓰기
+    // 학원 원장 계정: 학원 이름으로 만든 전용 이메일(@amc.fanmath.co.kr)
+    function academyUser() {
+      return request.auth != null
+        && request.auth.token.get('email', '').matches('.*@amc[.]fanmath[.]co[.]kr$');
+    }
+    // 관리자: 로그인했고 학원 원장 계정이 아닌 사람
+    function admin() { return request.auth != null && !academyUser(); }
+
+    // 로그인한 원장님의 학원 ID
+    function myAcademy() {
+      return get(/databases/$(database)/documents/academyUsers/$(request.auth.uid)).data.academyId;
+    }
+    // 관리자가 성적 조회를 열어 두었는지
+    function resultsOpen() {
+      return get(/databases/$(database)/documents/settings/results).data.resultsOpen == true;
+    }
+
+    // 회차 설정·성적 조회 설정: 누구나 읽기, 관리자만 쓰기
     match /settings/{doc} {
       allow read: if true;
       allow write: if admin();
@@ -24,6 +40,27 @@ service cloud.firestore {
     // 출석: 관리자만
     match /attendance/{examNo} {
       allow read, write: if admin();
+    }
+
+    // 성적: 관리자는 전체, 원장님은 조회가 열려 있을 때 자기 학원 학생만
+    match /results/{id} {
+      allow read: if admin()
+        || (academyUser() && resultsOpen() && resource.data.academyId == myAcademy());
+      allow write: if admin();
+    }
+
+    // 학원 계정 원부(초기 비밀번호 포함): 관리자만
+    match /academies/{id} {
+      allow read, write: if admin();
+    }
+
+    // 원장 계정 연결 정보: 관리자는 전체, 원장님은 본인 것만 읽고 비밀번호 변경 시각만 고칠 수 있음
+    match /academyUsers/{uid} {
+      allow read: if admin() || (academyUser() && request.auth.uid == uid);
+      allow create, delete: if admin();
+      allow update: if admin()
+        || (academyUser() && request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pwChangedAt']));
     }
   }
 }

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>학원 성적 조회 — AMC 안양시 수학경시대회</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="assets/css/amc.css?v=202611241500">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="academy.html"><span class="mark">AMC</span>학원 성적 조회 <small data-academy-name></small></a>
+    <nav id="top-nav" hidden>
+      <a href="#" id="open-pw">비밀번호 변경</a>
+      <a href="#" id="logout">로그아웃</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <!-- 로그인 -->
+    <section class="card wrap-narrow" id="gate" style="margin:0 auto">
+      <h2>원장님 로그인</h2>
+      <p class="hint">AMC 위원회에서 안내받은 아이디(학원 이름)와 비밀번호로 로그인하세요. 우리 학원 학생의 성적만 조회됩니다.</p>
+      <form class="form" id="login-form" style="margin-top:20px" novalidate>
+        <div class="form-row"><label for="ac-name">아이디 (학원 이름)</label><input class="input" id="ac-name" name="name" autocomplete="username" placeholder="예: 송우찬수학학원" required></div>
+        <div class="form-row"><label for="ac-pw">비밀번호</label><input class="input" id="ac-pw" name="pw" type="password" autocomplete="current-password" required></div>
+        <button class="btn btn-block" type="submit">로그인</button>
+      </form>
+      <div class="alert" id="gate-msg" hidden></div>
+    </section>
+
+    <!-- 조회 기간 아님 / 오류 -->
+    <section class="card wrap-narrow" id="closed" style="margin:0 auto" hidden>
+      <h2 id="closed-title">성적 조회 기간이 아닙니다</h2>
+      <p class="hint" id="closed-msg">성적 조회가 열리면 이 화면에서 바로 확인할 수 있습니다.</p>
+    </section>
+
+    <!-- 본문 -->
+    <div id="app" hidden>
+      <div class="card">
+        <div class="row row-between">
+          <div>
+            <h2 id="ac-title" style="margin:0"></h2>
+            <p class="hint" id="round-title" style="margin:4px 0 0"></p>
+          </div>
+          <div class="row no-print">
+            <button class="btn btn-line btn-sm" id="dl-xlsx">엑셀 다운로드</button>
+            <button class="btn btn-line btn-sm" onclick="window.print()">인쇄</button>
+          </div>
+        </div>
+        <div class="alert" id="notice" hidden style="margin-top:14px"></div>
+      </div>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="card">
+        <div class="row no-print" style="margin-bottom:14px">
+          <select class="input" id="f-grade" style="max-width:160px"></select>
+          <select class="input" id="f-award" style="max-width:180px"></select>
+          <input class="input" id="q" placeholder="이름·수험번호·학교 검색" style="max-width:260px">
+        </div>
+        <p class="hint legend" style="margin-bottom:10px"><span class="mk mk-o">O</span> 정답 <span class="mk mk-x">X</span> 오답</p>
+        <div class="table-wrap result-wrap">
+          <table id="result-table" class="result-table">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 비밀번호 변경 -->
+<div class="modal" id="pw-modal" hidden>
+  <div class="modal-box card">
+    <h2>비밀번호 변경</h2>
+    <p class="hint">영문과 숫자를 섞어 8자 이상으로 정해 주세요.</p>
+    <form id="pw-form" style="margin-top:16px" novalidate>
+      <div class="form-row"><label>현재 비밀번호</label><input class="input" name="cur" type="password" autocomplete="current-password" required></div>
+      <div class="form-row"><label>새 비밀번호</label><input class="input" name="next" type="password" autocomplete="new-password" required></div>
+      <div class="form-row"><label>새 비밀번호 확인</label><input class="input" name="next2" type="password" autocomplete="new-password" required></div>
+      <div class="row">
+        <button class="btn" type="submit">변경</button>
+        <button class="btn btn-line" type="button" id="pw-cancel">닫기</button>
+      </div>
+      <div class="alert" id="pw-msg" hidden style="margin-top:12px"></div>
+    </form>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="assets/js/config.js?v=202611241500"></script>
+<script src="assets/js/app.js?v=202611241500"></script>
+<script src="assets/js/results-common.js?v=202611241500"></script>
+<script src="assets/js/academy.js?v=202611241500"></script>
+</body>
+</html>

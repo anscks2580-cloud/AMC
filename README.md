@@ -9,6 +9,8 @@
 | `print.html` | 수험표 일괄 인쇄(시험실·학원별) | 관리자 |
 | `scan.html` | 감독관 휴대폰 카메라로 QR 출석 처리, 수기 출석 | 관리자 |
 | `dashboard.html` | 실시간 출석 현황, 미출석자, 기록, 엑셀 다운로드 | 관리자 |
+| `results.html` | 성적 엑셀 업로드, 전체 성적, 학원 계정 발급·재발급·해제, 조회 열기/닫기 | 관리자 |
+| `academy.html` | 원장님 성적 조회(자기 학원 학생만): 이름·문항별 정오표·총점·상장, 엑셀·인쇄, 비밀번호 변경 | 학원 원장 |
 
 ## 처음 설정
 
@@ -23,6 +25,17 @@
 - `students/{수험번호}` — 응시자 원본 (name, grade, school, phone, room, academy, token)
 - `lookup/{sha256(이름|휴대폰)}` — 조회용 사본. 이름과 번호를 아는 사람만 1건 읽을 수 있고 목록은 볼 수 없음
 - `attendance/{수험번호}` — 출석 (checkedAt, by, method: qr|manual, scanRoom)
+- `results/{문서ID}` — 성적 (name, examNo, grade, school, academy, academyId, marks[O/X], total, award, rank)
+- `settings/results` — 성적 조회 설정 (resultsOpen, title, notice, labels[문항 번호])
+- `academies/{학원ID}` — 학원 계정 원부, 관리자 전용 (name, email, uid, initialPw, revoked)
+- `academyUsers/{uid}` — 원장 계정 연결 (academyId, name, email, pwChangedAt)
+
+## 학원 원장 계정
+
+- 아이디는 학원 이름(띄어쓰기 무시). 실제 Firebase 계정은 학원 이름으로 만든 `ac…@amc.fanmath.co.kr` 이메일이라 원장님은 이메일을 몰라도 됩니다.
+- 이 도메인 계정은 관리자 권한이 없고, `results` 중 `academyId` 가 자기 학원인 것만, 조회가 열려 있을 때만 읽을 수 있습니다(firestore.rules 에서 강제).
+- 초기 비밀번호는 영문 4자 + 숫자 4자 난수. 원장님이 바꾸면 관리자 화면에 「원장님 변경함」으로 표시되고 초기 비밀번호는 더 이상 쓸 수 없습니다.
+- 해제하면 `academyUsers` 연결이 지워져 바로 조회가 막힙니다. 「다시 연결」로 되살릴 수 있습니다.
 
 QR 내용은 `AMC:수험번호:토큰`. 토큰은 학생마다 임의 생성되어 수험번호만 알고 남의 출석을 찍는 일을 막습니다.
 

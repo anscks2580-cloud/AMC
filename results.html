@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>성적·학원 계정 — AMC 관리자</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="assets/css/amc.css?v=202611241500">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="results.html"><span class="mark">AMC</span>성적·학원 계정 <small data-user></small></a>
+    <nav>
+      <a href="admin.html">명단·설정</a>
+      <a href="scan.html">출석 스캔</a>
+      <a href="dashboard.html">출석 현황</a>
+      <a href="print.html">수험표 일괄출력</a>
+      <a href="results.html">성적·학원계정</a>
+      <a href="#" data-logout>로그아웃</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <!-- 로그인 -->
+    <section class="card wrap-narrow" id="gate" style="margin:0 auto">
+      <h2>관리자 로그인</h2>
+      <p class="hint">AMC 위원회에서 발급한 관리자 계정으로 로그인하세요.</p>
+      <form class="form" id="login-form" style="margin-top:20px" novalidate>
+        <div class="form-row"><label for="email">이메일</label><input class="input" id="email" name="email" type="email" autocomplete="username" required></div>
+        <div class="form-row"><label for="pw">비밀번호</label><input class="input" id="pw" name="pw" type="password" autocomplete="current-password" required></div>
+        <button class="btn btn-block" type="submit">로그인</button>
+      </form>
+      <div class="alert" id="gate-msg" hidden></div>
+    </section>
+
+    <div id="app" hidden>
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="all">전체 성적</button>
+        <button role="tab" aria-selected="false" data-tab="upload">성적 엑셀 업로드</button>
+        <button role="tab" aria-selected="false" data-tab="accounts">학원 계정</button>
+        <button role="tab" aria-selected="false" data-tab="settings">조회 설정</button>
+      </div>
+
+      <!-- 전체 성적 -->
+      <section data-panel="all">
+        <div class="alert" id="open-state" style="margin-bottom:16px"></div>
+        <div class="stats" id="all-stats"></div>
+        <div class="card">
+          <div class="row row-between" style="margin-bottom:14px">
+            <div class="row">
+              <select class="input" id="a-academy" style="max-width:220px"></select>
+              <select class="input" id="a-grade" style="max-width:140px"></select>
+              <select class="input" id="a-award" style="max-width:160px"></select>
+              <input class="input" id="a-q" placeholder="이름·수험번호·학교 검색" style="max-width:220px">
+            </div>
+            <div class="row">
+              <button class="btn btn-line btn-sm" id="a-xlsx">엑셀 다운로드</button>
+              <button class="btn btn-warn btn-sm" id="a-del">성적 전체 삭제</button>
+            </div>
+          </div>
+          <div class="table-wrap result-wrap">
+            <table id="all-table" class="result-table"><thead></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 업로드 -->
+      <section data-panel="upload" hidden>
+        <div class="card">
+          <h2>성적 엑셀 업로드</h2>
+          <p class="hint">채점 결과 엑셀을 올리세요. 이름·학원·문항별 정오(O/X)·총점·상장 열을 맞춰 저장합니다. 학원 열이 없거나 비어 있으면 수험번호(또는 이름·학년)로 응시자 명단에서 학원을 찾아 채웁니다.</p>
+          <label class="drop" id="drop" style="margin-top:16px">
+            <input type="file" id="file" accept=".xlsx,.xls,.csv">
+            파일을 여기에 끌어다 놓거나 눌러서 선택
+          </label>
+        </div>
+        <div class="card" id="map-card" hidden>
+          <h2>열 맞추기</h2>
+          <div class="row" style="margin:10px 0 16px">
+            <label class="row" style="gap:6px;font-size:14px">시트 <select class="input" id="sheet-pick" style="width:auto"></select></label>
+            <label class="row" style="gap:6px;font-size:14px">제목이 있는 행 <select class="input" id="head-row" style="width:auto"></select></label>
+          </div>
+          <div id="map-rows"></div>
+          <h3 style="font-size:16px;margin:18px 0 6px">문항 열 <small class="hint" id="q-count"></small></h3>
+          <p class="hint">번호별 정오표로 보여 줄 열을 고르세요. 숫자 제목(1, 2, 3… / 1번 / 문항1)은 자동으로 골라 둡니다.</p>
+          <div class="row" style="margin:6px 0 8px">
+            <button class="btn btn-line btn-sm" type="button" id="q-all">전체 선택</button>
+            <button class="btn btn-line btn-sm" type="button" id="q-none">전체 해제</button>
+          </div>
+          <div id="q-cols" class="q-cols"></div>
+          <div class="form-row" style="margin-top:16px;max-width:520px">
+            <label>문항 칸 값 처리</label>
+            <select class="input" id="mark-mode">
+              <option value="auto">자동 — O/X·정답/오답·1/0 을 O·X 로 표시</option>
+              <option value="score">배점 — 0 이면 X, 0보다 크면 O</option>
+              <option value="raw">그대로 — 엑셀 칸 값을 그대로 표시</option>
+            </select>
+          </div>
+          <label class="row" style="gap:6px;font-size:14px"><input type="checkbox" id="opt-replace" checked> 기존 성적을 모두 지우고 새로 저장</label>
+          <div class="row" style="margin-top:14px"><button class="btn" id="preview">미리보기</button></div>
+        </div>
+        <div class="card" id="preview-card" hidden>
+          <div class="row row-between">
+            <h2 style="margin:0">미리보기 <small class="hint" id="preview-count"></small></h2>
+            <button class="btn btn-ochre" id="save">성적 저장</button>
+          </div>
+          <div class="alert" id="preview-msg" hidden></div>
+          <div id="preview-academies" style="margin-top:14px"></div>
+          <div class="table-wrap" style="margin-top:14px;max-height:60vh">
+            <table id="preview-table"><thead></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 학원 계정 -->
+      <section data-panel="accounts" hidden>
+        <div class="card">
+          <div class="row row-between">
+            <div>
+              <h2 style="margin:0">학원 계정</h2>
+              <p class="hint" style="margin:4px 0 0">아이디는 학원 이름(띄어쓰기 무시), 비밀번호는 영문 4자+숫자 4자 난수로 발급합니다. 원장님은 <a href="academy.html" target="_blank" style="text-decoration:underline">학원 성적 조회</a> 화면에서 로그인하고 비밀번호를 바꿀 수 있습니다.</p>
+            </div>
+            <div class="row">
+              <button class="btn btn-line btn-sm" id="ac-add">학원 직접 추가</button>
+              <button class="btn btn-line btn-sm" id="ac-xlsx">계정 목록 엑셀</button>
+              <button class="btn btn-ochre btn-sm" id="ac-make-all">계정 없는 학원 모두 발급</button>
+            </div>
+          </div>
+          <div class="alert" id="ac-msg" hidden style="margin-top:14px"></div>
+          <div class="table-wrap" style="margin-top:16px;max-height:70vh">
+            <table id="ac-table">
+              <thead><tr><th>학원 (아이디)</th><th>응시자 명단</th><th>성적</th><th>계정</th><th>초기 비밀번호</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 조회 설정 -->
+      <section data-panel="settings" hidden>
+        <div class="card" style="max-width:640px;margin:0 auto">
+          <h2>성적 조회 설정</h2>
+          <p class="hint">원장님 성적 조회 화면 주소: <a id="ac-link" target="_blank" style="text-decoration:underline"></a></p>
+          <form id="cfg-form" style="margin-top:18px">
+            <div class="form-row"><label class="row" style="gap:8px"><input type="checkbox" name="resultsOpen"> 원장님 성적 조회 열기</label></div>
+            <div class="form-row"><label>조회 화면 제목</label><input class="input" name="title" placeholder="2026 AMC 제2회 안양시 수학경시대회 성적"></div>
+            <div class="form-row"><label>원장님께 보일 안내 (선택)</label><textarea class="input" name="notice" rows="4" placeholder="시상식 일정, 상장 수령 방법 등"></textarea></div>
+            <button class="btn" type="submit">저장</button>
+            <div class="alert" id="cfg-msg" hidden></div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="assets/js/config.js?v=202611241500"></script>
+<script src="assets/js/app.js?v=202611241500"></script>
+<script src="assets/js/results-common.js?v=202611241500"></script>
+<script src="assets/js/results.js?v=202611241500"></script>
+</body>
+</html>
