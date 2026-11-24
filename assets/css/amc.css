@@ -236,8 +236,8 @@ code.pw { font-size: 15px; font-weight: 700; letter-spacing: .05em; background: 
 /* ---------- AMC 포토부스 테마 (성적·시상 조회) ---------- */
 body.booth-theme {
   --navy: #1f2a4a; --navy-2: #2d3b63; --navy-ink: #161e36;
-  --sky: #e0edf9; --tile: #9ec3e0; --tile-ink: #6f9cc2; --cyan: #7fd3da;
-  --bg: #e0edf9; --line: #cddcec; --line-strong: #a9c2dc;
+  --sky: #daeefa; --tile: #86c1e0; --tile-ink: #6f9cc2; --cyan: #7fd3da;
+  --bg: #daeefa; --line: #cddcec; --line-strong: #a9c2dc;
   background: var(--sky);
 }
 .booth-theme .top { background: var(--navy); border-top: 6px solid transparent; border-image: repeating-linear-gradient(90deg, #6f86a8 0 2px, transparent 2px 5px) 6; }
@@ -257,14 +257,15 @@ body.booth-theme {
 .booth-band { position: relative; border-radius: 4px; overflow: hidden; }
 .booth-tiles { display: grid; grid-template-columns: repeat(7, 1fr); }
 .booth-tiles i { font-style: normal; height: 74px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; }
-.booth-tiles i.l { background: var(--sky); color: #9dbbd8; border: 1px solid #d3e3f3; }
-.booth-tiles i.d { background: var(--tile); color: #e9f2fb; }
-.booth-tiles i:nth-child(14n+2), .booth-tiles i:nth-child(14n+4), .booth-tiles i:nth-child(14n+6) { font-style: italic; letter-spacing: .02em; }
+.booth-tiles i.l { background: var(--sky); color: #8fc3e2; }
+.booth-tiles i.d { background: var(--tile); }
+.booth-tiles i.d img { height: 62%; width: auto; }
+.booth-tiles i.en { font-style: italic; letter-spacing: .02em; }
 .booth-logo {
   position: absolute; inset: 0; margin: auto; width: min(380px, 62%); height: 100%;
-  background: var(--sky); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: var(--tile); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
 }
-.booth-logo img { width: min(220px, 80%); }
+.booth-logo img { width: min(240px, 80%); }
 .booth-logo p { margin: 4px 0 0; font-weight: 900; font-size: 18px; color: var(--navy); letter-spacing: .02em; }
 .booth-logo small { font-size: 13px; color: #3d4b6b; }
 /* 로그인 후: 작게 */
