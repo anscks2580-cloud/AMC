@@ -115,9 +115,7 @@
   /* ================= 관리자 ================= */
   function startAdmin(user) {
     $("[data-who]").textContent = user.email === A.ADMIN_EMAIL ? "admin" : user.email;
-    if (user.email === A.ADMIN_EMAIL) {
-      db.collection("private").doc("admin").get().then(function (d) { if (!d.exists || !d.data().pwChangedAt) openPw(true); }).catch(function () {});
-    }
+    /* 관리자는 비밀번호 변경을 강제하지 않음 (원할 때 상단 메뉴에서 변경) */
     $$("[data-admin-only]").forEach(function (el) { el.hidden = false; });
     $("#admin-tabs").hidden = false;
     $("#view").hidden = false;
