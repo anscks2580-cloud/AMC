@@ -147,7 +147,7 @@
     var map = {};
     results.forEach(function (r) {
       var id = r.academyId || "";
-      if (!map[id]) map[id] = { id: id, name: id ? r.academy : "개인접수 (관리자만 조회)", students: 0, awards: 0 };
+      if (!map[id]) map[id] = { id: id, name: id ? r.academy : "학원 없는 개인접수 (관리자만 조회)", students: 0, awards: 0 };
       map[id].students++; if (r.award) map[id].awards++;
     });
     Object.keys(academies).forEach(function (id) { if (!map[id]) map[id] = { id: id, name: academies[id].name, students: 0, awards: 0 }; });
@@ -192,7 +192,7 @@
   function currentName() {
     if (!isAdmin) return me ? me.name : "";
     if (view === "*" || !view) return "전체 학원";
-    if (view === "!") return "개인접수 (관리자만 조회)";
+    if (view === "!") return "학원 없는 개인접수 (관리자만 조회)";
     var a = academyList().filter(function (x) { return x.id === view; })[0];
     return a ? a.name : view;
   }
