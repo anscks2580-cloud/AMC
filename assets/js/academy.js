@@ -294,9 +294,9 @@
       var act = st === "none" ? '<button class="btn btn-sm" data-make="' + esc(r.id) + '">발급</button>'
         : st === "revoked" ? '<button class="btn btn-line btn-sm" data-relink="' + esc(r.id) + '">다시 연결</button>'
         : '<button class="btn btn-line btn-sm" data-reset="' + esc(r.id) + '">비밀번호 재발급</button> <button class="btn btn-line btn-sm" data-revoke="' + esc(r.id) + '">해제</button>';
-      act = '<button class="btn btn-line btn-sm" data-see="' + esc(r.id) + '">보기</button> ' + act;
+      act = (st === "none" ? "" : '<button class="btn btn-ochre btn-sm" data-msg="' + esc(r.id) + '">안내 문자</button> ') + '<button class="btn btn-line btn-sm" data-see="' + esc(r.id) + '">보기</button> ' + act;
       var conf = r.students === 0 ? '<span class="tag tag-no">학생 없음</span>' : c ? '<span class="tag tag-ok">확인</span> <small class="hint">' + esc(fmt(c.confirmedAt)) + "</small>" : '<span class="tag tag-warn">미확인</span>';
-      return "<tr><td><b>" + esc(r.name) + '</b><br><small class="hint">아이디: ' + esc(r.id) + "</small></td>" +
+      return '<tr><td><a href="#" class="ac-name" data-msg="' + esc(r.id) + '"><b>' + esc(r.name) + '</b></a><br><small class="hint">아이디: ' + esc(r.id) + "</small></td>" +
         '<td class="num">' + r.students + "</td><td>" + conf + "</td><td>" + stHtml + "</td><td>" + pw + "</td><td>" + act + "</td></tr>";
     }).join("") || '<tr><td colspan="6" style="text-align:center;color:var(--muted)">성적을 먼저 올리세요.</td></tr>';
   }
@@ -311,6 +311,8 @@
       });
     });
     $("#ac-table").addEventListener("click", function (e) {
+      var m = e.target.closest("[data-msg]");
+      if (m) { e.preventDefault(); openMsg(m.dataset.msg); return; }
       var b = e.target.closest("button"); if (!b) return;
       if (b.dataset.see) { seeAcademy(b.dataset.see); return; }
       var id = b.dataset.make || b.dataset.reset || b.dataset.revoke || b.dataset.relink;
@@ -433,6 +435,56 @@
     b.set(db.collection("academyUsers").doc(a.uid), { academyId: id, name: a.name, email: a.email, pwChangedAt: null });
     return b.commit().then(function () { return esc(a.name) + " 계정을 다시 연결했습니다."; });
   }
+
+  /* 원장님께 보낼 안내 문자 팝업 */
+  function firstText(name, id, pw, n) {
+    return "[제2회 안양시 수학경시대회] 성적·시상 조회 안내\n\n" + name + " 원장님, 안녕하세요.\n제2회 안양시 수학경시대회 성적·시상 조회 페이지를 안내드립니다.\n\n" +
+      "▶ 접속 주소: " + academyUrl() + "\n▶ 아이디: " + id + "\n▶ 비밀번호: " + pw + "\n\n" +
+      "· 처음 로그인하시면 비밀번호 변경 창이 뜹니다. 원장님만 아시는 비밀번호(영문+숫자 8자 이상)로 바꿔 주세요.\n" +
+      "· 원장님 학원 학생 " + n + "명의 성적, 문항별 정오표, 시상 내역을 보실 수 있습니다.\n" +
+      "· 시상 내용을 확인하신 뒤 화면의 「시상 내용 확인」 버튼을 꼭 눌러 주세요.\n\n(사)안양시학원연합회 보습분과 협의회";
+  }
+  var msgId = "";
+  function openMsg(id) {
+    msgId = id;
+    var a = academies[id] || {}, st = acState(id);
+    var row = academyList().filter(function (r) { return r.id === id; })[0] || { students: 0 };
+    $("#msg-title").textContent = (a.name || id) + " 안내 문자";
+    $("#msg-done").hidden = true;
+    if (st === "issued") {
+      $("#msg-text").value = firstText(a.name || id, id, a.initialPw, row.students);
+      A.hide($("#msg-warn")); $("#msg-reset").hidden = true; $("#msg-copy").disabled = false;
+    } else {
+      $("#msg-text").value = "";
+      A.show($("#msg-warn"), st === "changed" ? "원장님이 이미 비밀번호를 바꿨습니다. 바꾼 비밀번호는 관리자도 모르기 때문에, 새로 보내려면 비밀번호를 재발급해야 합니다." : "계정이 없거나 해제된 학원입니다.", "err");
+      $("#msg-reset").hidden = st !== "changed"; $("#msg-copy").disabled = true;
+    }
+    $("#msg-modal").hidden = false;
+  }
+  function copyText(t) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t);
+    var ta = $("#msg-text"); ta.focus(); ta.select(); document.execCommand("copy"); return Promise.resolve();
+  }
+  $("#msg-copy").addEventListener("click", function () {
+    var t = $("#msg-text").value; if (!t) return;
+    copyText(t).then(function () { $("#msg-done").hidden = false; setTimeout(function () { $("#msg-done").hidden = true; }, 2500); })
+      .catch(function () { $("#msg-text").select(); alert("자동 복사가 막혀 있습니다. 글자가 선택됐으니 Ctrl+C 를 눌러 주세요."); });
+  });
+  $("#msg-close").addEventListener("click", function () { $("#msg-modal").hidden = true; });
+  $("#msg-modal").addEventListener("click", function (e) { if (e.target === $("#msg-modal")) $("#msg-modal").hidden = true; });
+  $("#msg-reset").addEventListener("click", function () {
+    var id = msgId, b = $("#msg-reset");
+    if (!confirm((academies[id] || {}).name + " 비밀번호를 새 난수로 재발급할까요?")) return;
+    b.disabled = true;
+    firebase.app().functions("asia-northeast3").httpsCallable("resetAcademyPassword")({ academyId: id }).then(function (res) {
+      var a = academies[id] || {};
+      var row = academyList().filter(function (r) { return r.id === id; })[0] || { students: 0 };
+      $("#msg-text").value = firstText(a.name || id, id, res.data.password, row.students);
+      A.hide($("#msg-warn")); b.hidden = true; $("#msg-copy").disabled = false;
+    }).catch(function (err) {
+      A.show($("#msg-warn"), "재발급하지 못했습니다. 서버 함수 배포를 확인해 주세요. (" + esc(err.message || err.code) + ")", "err");
+    }).then(function () { b.disabled = false; });
+  });
 
   function guideText(name, id, pw) {
     return "[제2회 안양시 수학경시대회] 비밀번호 재발급 안내\n\n" + name + " 원장님, 성적·시상 조회 비밀번호를 새로 발급해 드립니다.\n\n" +

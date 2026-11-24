@@ -320,3 +320,5 @@ body.booth-theme { position: relative; overflow-x: hidden; }
 .dot-ok { background: var(--ok); }
 .dot-warn { background: var(--warn); }
 .booth-theme .tabs { background: var(--sky); border-radius: 6px 6px 0 0; padding: 0 8px; box-shadow: 0 0 0 1px rgba(134,193,224,.5); }
+a.ac-name { color: var(--navy); text-decoration: underline; text-decoration-color: var(--tile); text-underline-offset: 3px; }
+a.ac-name:hover { text-decoration-color: var(--navy); }
