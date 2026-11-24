@@ -72,7 +72,7 @@
         return "<tr>" +
           '<td class="sticky-col"><b>' + esc(r.name) + "</b>" + (r.entry === "개인접수" ? ' <small class="hint">개인</small>' : "") + "</td>" +
           '<td class="num">' + esc(r.examNo) + "</td><td>" + esc(r.school) + "</td>" +
-          (opts.academy ? "<td>" + (r.academyId ? esc(r.academy) : '<span class="hint">학원 없음</span>') + "</td>" : "") +
+          (opts.academy ? "<td>" + (r.academyId ? esc(r.academy) : '<span class="hint">개인' + (r.appliedVia ? " · " + esc(r.appliedVia) : "") + "</span>") + "</td>" : "") +
           '<td class="num"><b>' + esc(r.total) + "</b></td><td>" + awardHtml(r.award) + "</td>" +
           "<td>" + (r.cert ? '<span class="tag ' + (r.cert === "인증" ? "tag-ok" : "tag-no") + '">' + esc(r.cert) + "</span>" : "") + "</td>" +
           (hasKey ? '<td class="q num">' + (cc == null ? "" : cc + "/" + labels.length) + "</td>" : "") +
@@ -109,7 +109,7 @@
     var base = ["수험번호", "성명", "학년", "학교"].concat(opts.academy ? ["학원"] : []).concat(["접수", "총점", "상장", "인증", "맞은 수"]);
     function baseRow(r) {
       var cc = correctCount(r, (keysByGrade || {})[r.grade] || []);
-      return [r.examNo || "", r.name, r.grade || "", r.school || ""].concat(opts.academy ? [r.academyId ? r.academy : "학원 없음"] : [])
+      return [r.examNo || "", r.name, r.grade || "", r.school || ""].concat(opts.academy ? [r.academyId ? r.academy : "개인접수" + (r.appliedVia ? " (" + r.appliedVia + ")" : "")] : [])
         .concat([r.entry || "", isNaN(Number(r.total)) || r.total === "" ? r.total : Number(r.total), r.award || "", r.cert || "", cc == null ? "" : cc + "/" + (r.labels || []).length]);
     }
     var all = [base].concat(sorted.map(baseRow));
