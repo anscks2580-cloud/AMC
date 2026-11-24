@@ -274,7 +274,7 @@
         '<div class="stat"><b>' + list.length + '</b><span>전체 학원</span></div>' +
         '<div class="stat"><b style="color:var(--ok)">' + done.length + '</b><span>확인 완료</span></div>' +
         '<div class="stat"><b style="color:var(--warn)">' + todo.length + '</b><span>확인 미완료</span></div>' +
-        '<div class="stat"><b>' + personal + '</b><span>개인접수 학생 (관리자만)</span></div>' +
+        '<div class="stat"><b>' + personal + '</b><span>학원 없는 개인접수 (관리자만)</span></div>' +
       "</div>" +
       '<div class="card fold-card">' +
         '<details class="fold"><summary><span class="dot dot-ok"></span>확인 완료 <b>' + done.length + "곳</b><small>펼치기</small></summary>" + chips(done, true) + "</details>" +
