@@ -337,3 +337,4 @@ a.ac-name:hover { text-decoration-color: var(--navy); }
   .stat-award .lbl-s { font-size: 11px; }
   .stat-award .lbl-xs { font-size: 9.5px; letter-spacing: -.03em; }
 }
+.stat-award em.tier { font-style: normal; font-size: 12px; font-weight: 800; margin-left: 8px; padding: 1px 7px; border-radius: 999px; background: rgba(255,255,255,.7); vertical-align: middle; }

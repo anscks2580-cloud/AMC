@@ -10,19 +10,37 @@
   var GRADE_ORDER = ["초1", "초2", "초3", "초4", "초5", "초6", "중1", "중2", "중3", "고1", "고2", "고3"];
   function gradeIdx(g) { var i = GRADE_ORDER.indexOf(g); return i === -1 ? 99 : i; }
 
-  /* 상장 서열 */
-  var AWARD_ORDER = ["안양시장상", "지학사대표상", "국회의원상", "경기도의회의장상", "안양시의회의장상", "안양시의회의원상", "경기도의회의원상", "경기도학원연합회장상", "안양시학원연합회장상", "안양시학원연합회보습협의회장상"];
+  /* 상장 서열 (제2회 AMC 상격별 시상 안내 순서) */
+  var AWARD_ORDER = [
+    "안양시장상", "경기도의회의장상",                       /* 대상 */
+    "국회의원상", "안양시의회의장상",                       /* 금상 */
+    "안양시의회의원상", "경기도의회의원상",                 /* 은상 */
+    "경기도학원연합회장상", "안양시학원연합회장상",         /* 동상 */
+    "안양시학원연합회보습협의회장상",                       /* 장려상 */
+    "지학사대표이사상", "풍산자연구소장상"                  /* 특별상 */
+  ];
+  var AWARD_TIER = ["대상", "대상", "금상", "금상", "은상", "은상", "동상", "동상", "장려상", "특별상", "특별상"];
+  var AWARD_ALIAS = { "지학사대표상": "지학사대표이사상", "풍산자수학연구소장상": "풍산자연구소장상" };
+  function awardKey(a) { a = String(a || "").replace(/\s+/g, ""); return AWARD_ALIAS[a] || a; }
   function awardIdx(a) {
-    a = String(a || "").replace(/\s+/g, "");
+    a = awardKey(a);
     if (!a) return 999;
     var i = AWARD_ORDER.indexOf(a);
     return i === -1 ? 500 : i;
   }
+  /* 화면에 보일 공식 이름 */
+  var AWARD_DISPLAY = { "지학사대표이사상": "지학사 대표이사상", "풍산자연구소장상": "풍산자 연구소장상" };
+  function awardName(a) { var k = awardKey(a); return AWARD_DISPLAY[k] || String(a || ""); }
+  function awardTier(a) { var i = awardIdx(a); return AWARD_TIER[i] || ""; }
 
-  /* 상장마다 다른 색 [배경, 글자] */
+  /* 상장마다 다른 색 [배경, 글자] — 위 순서대로 */
   var AWARD_COLORS = [
-    ["#fff1c9", "#9a6b00"], ["#efe6ff", "#6b3fb5"], ["#ffe3e3", "#c0392b"], ["#e1e8ff", "#2c3e8f"], ["#d9f5f1", "#0f7d6f"],
-    ["#dff0ff", "#1f6fb2"], ["#ece9ff", "#4a43b0"], ["#ffe9d6", "#b85d10"], ["#e2f5e6", "#2f7d3e"], ["#f0ece6", "#6b5d4f"]
+    ["#fff1c9", "#9a6b00"], ["#fde7c2", "#a0560b"],
+    ["#ffe3e3", "#c0392b"], ["#fde4f0", "#a8336f"],
+    ["#dff0ff", "#1f6fb2"], ["#e1e8ff", "#2c3e8f"],
+    ["#d9f5f1", "#0f7d6f"], ["#e2f5e6", "#2f7d3e"],
+    ["#f0ece6", "#6b5d4f"],
+    ["#efe6ff", "#6b3fb5"], ["#ece9ff", "#4a43b0"]
   ];
   function awardColor(a) { var i = awardIdx(a); return AWARD_COLORS[i] || ["#eef1f5", "#5a6375"]; }
 
@@ -57,7 +75,7 @@
   function awardHtml(a) {
     if (!a) return '<span class="tag tag-no">-</span>';
     var c = awardColor(a);
-    return '<span class="tag" style="background:' + c[0] + ";color:" + c[1] + '">' + esc(a) + "</span>";
+    return '<span class="tag" style="background:' + c[0] + ";color:" + c[1] + '">' + esc(awardName(a)) + "</span>";
   }
 
   /* 학년별 표 묶음 그리기 — 상장·인증까지만 */
@@ -95,7 +113,7 @@
     return '<div class="stat"><b>' + list.length + '</b><span>응시 학생</span></div>' +
       '<div class="stat"><b style="color:var(--ok)">' + cert + '</b><span>인증</span></div>' +
       '<div class="stat"><b style="color:var(--warn)">' + uncert + '</b><span>미인증</span></div>' +
-      keys.map(function (k) { var c = awardColor(k); return '<div class="stat stat-sm stat-award" style="border-left:4px solid ' + c[1] + ";background:" + c[0] + '"><b style="color:' + c[1] + '">' + awards[k] + "</b>" + label(k) + "</div>"; }).join("");
+      keys.map(function (k) { var c = awardColor(k), t = awardTier(k); return '<div class="stat stat-sm stat-award" style="border-left:4px solid ' + c[1] + ";background:" + c[0] + '"><b style="color:' + c[1] + '">' + awards[k] + (t ? '<em class="tier" style="color:' + c[1] + '">' + t + "</em>" : "") + "</b>" + label(awardName(k)) + "</div>"; }).join("");
   }
 
   function filterOptions(list) {
@@ -115,7 +133,7 @@
     var aoa = [base].concat(sorted.map(function (r) {
       return [r.examNo || "", r.name, r.grade || "", r.school || ""]
         .concat(opts.academy ? [r.academyId ? r.academy : "개인접수" + (r.appliedVia ? " (" + r.appliedVia + ")" : "")] : [])
-        .concat([isNaN(Number(r.total)) || r.total === "" ? r.total : Number(r.total), r.award || "", r.cert || ""]);
+        .concat([isNaN(Number(r.total)) || r.total === "" ? r.total : Number(r.total), awardName(r.award), r.cert || ""]);
     }));
     var wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet(aoa);
     ws["!cols"] = base.map(function (h) { return { wch: h === "상장" ? 28 : h === "학교" || h === "학원" ? 20 : 10 }; });
@@ -125,6 +143,6 @@
 
   window.AMCResults = {
     sortResults: sortResults, renderGrades: renderGrades, statsHtml: statsHtml, filterOptions: filterOptions,
-    exportXlsx: exportXlsx, awardIdx: awardIdx, gradeIdx: gradeIdx, GRADE_ORDER: GRADE_ORDER
+    exportXlsx: exportXlsx, awardIdx: awardIdx, awardTier: awardTier, awardName: awardName, gradeIdx: gradeIdx, GRADE_ORDER: GRADE_ORDER
   };
 })();

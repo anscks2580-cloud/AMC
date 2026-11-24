@@ -171,7 +171,7 @@
   function setupFilters() {
     var opt = R.filterOptions(results), g = $("#f-grade").value, a = $("#f-award").value;
     $("#f-grade").innerHTML = '<option value="">전체 학년</option>' + opt.grades.map(function (x) { return "<option>" + esc(x) + "</option>"; }).join("");
-    $("#f-award").innerHTML = '<option value="">전체 상장</option>' + opt.awards.map(function (x) { return "<option>" + esc(x) + "</option>"; }).join("");
+    $("#f-award").innerHTML = '<option value="">전체 상장</option>' + opt.awards.map(function (x) { return '<option value="' + esc(x) + '">' + esc((R.awardTier(x) ? R.awardTier(x) + " · " : "") + R.awardName(x)) + "</option>"; }).join("");
     $("#f-grade").value = g; $("#f-award").value = a;
   }
   function scoped() {
