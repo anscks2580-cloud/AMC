@@ -318,7 +318,7 @@
       if (!row) return;
       b.disabled = true;
       var job = b.dataset.make ? createAccount(row.name)
-        : b.dataset.reset ? (confirm(row.name + " 비밀번호를 새로 발급할까요?") ? resetPassword(id) : Promise.resolve())
+        : b.dataset.reset ? (confirm(row.name + " 비밀번호를 새 난수로 재발급할까요?\n(원장님이 바꾼 비밀번호는 더 이상 쓸 수 없게 됩니다)") ? resetPassword(id) : Promise.resolve())
         : b.dataset.revoke ? (confirm(row.name + " 계정을 해제할까요? 해제하면 원장님이 조회할 수 없습니다.") ? revoke(id) : Promise.resolve())
         : relink(id);
       job.then(function (msg) { if (msg) A.show($("#ac-msg"), msg, "ok"); })
@@ -340,6 +340,29 @@
         A.show($("#ac-msg"), done + "개 학원 계정을 발급했습니다." + (fail.length ? "<br>실패: " + esc(fail.join(", ")) : ""), fail.length ? "err" : "ok");
         btn.disabled = false; btn.textContent = "계정 없는 학원 모두 발급";
       });
+    });
+    /* 전체 재발급: 모든 학원 비밀번호를 새 난수로 → 결과 엑셀(안내 문구 포함) 자동 다운로드 */
+    $("#ac-reset-all").addEventListener("click", function () {
+      var n = academyList().filter(function (r) { return r.id && (acState(r.id) === "issued" || acState(r.id) === "changed"); }).length;
+      if (!n) { A.show($("#ac-msg"), "재발급할 학원 계정이 없습니다.", "err"); return; }
+      if (prompt(n + "개 학원의 비밀번호를 모두 새 난수로 바꿉니다.\n원장님들이 쓰던 비밀번호는 더 이상 쓸 수 없게 됩니다.\n진행하려면 '재발급'이라고 입력하세요.") !== "재발급") return;
+      var btn = $("#ac-reset-all"); btn.disabled = true; btn.textContent = "재발급 중… (1분 정도)";
+      firebase.app().functions("asia-northeast3").httpsCallable("resetAcademyPassword", { timeout: 300000 })({ all: true }).then(function (res) {
+        var list = (res.data.results || []).sort(function (a, b) { return a.name.localeCompare(b.name, "ko"); });
+        var rows = list.map(function (r) {
+          return { 학원: r.name, 아이디: r.academyId, "새 비밀번호": r.password, "보낼 문구": guideText(r.name, r.academyId, r.password) };
+        });
+        var w = XLSX.utils.book_new(), ws = XLSX.utils.json_to_sheet(rows);
+        ws["!cols"] = [{ wch: 22 }, { wch: 22 }, { wch: 12 }, { wch: 80 }];
+        XLSX.utils.book_append_sheet(w, ws, "새 비밀번호");
+        XLSX.writeFile(w, "AMC_비밀번호_재발급_" + fmt(new Date()).replace(/[-: ]/g, "").slice(0, 12) + ".xlsx");
+        var fail = res.data.failed || [];
+        A.show($("#ac-msg"), list.length + "개 학원 비밀번호를 재발급했습니다. 새 비밀번호와 보낼 문구가 엑셀로 내려받아졌습니다." +
+          (fail.length ? "<br>실패: " + esc(fail.map(function (f) { return f.name; }).join(", ")) : ""), fail.length ? "err" : "ok");
+      }).catch(function (err) {
+        console.error(err);
+        A.show($("#ac-msg"), "재발급하지 못했습니다. 서버 함수가 배포됐는지 확인해 주세요. (" + esc(err.message || err.code) + ")", "err");
+      }).then(function () { btn.disabled = false; btn.textContent = "전체 비밀번호 재발급"; });
     });
     $("#ac-xlsx").addEventListener("click", function () {
       var rows = academyList().filter(function (r) { return r.id; }).sort(function (a, b) { return (confirms[a.id] ? 1 : 0) - (confirms[b.id] ? 1 : 0); }).map(function (r) {
@@ -371,11 +394,23 @@
     }).then(function () { return ca.signOut(); })
       .then(function () { return esc(name) + " 계정 발급 — 아이디 " + esc(id) + " / 비밀번호 " + esc(pw); });
   }
-  /* 재발급: 원장님이 아직 안 바꿨으면 여기서 바로. 바꾼 뒤(잊어버린 경우)는 PC의 비밀번호재발급.bat 로 */
+  /* 재발급: 서버 함수(resetAcademyPassword)가 원장님이 바꾼 뒤에도 새 난수로 바꿈.
+     서버 함수가 아직 없으면 예전 방식(초기 비밀번호로 들어가 변경)으로 시도 */
   function resetPassword(id) {
+    var a = academies[id];
+    var call = firebase.app().functions("asia-northeast3").httpsCallable("resetAcademyPassword");
+    return call({ academyId: id }).then(function (res) {
+      return esc(a.name) + " 새 비밀번호: <b>" + esc(res.data.password) + "</b> (원장님은 다음 로그인 때 다시 바꾸게 됩니다)" +
+        '<textarea class="input" readonly rows="9" style="margin-top:10px;font-size:13px" onclick="this.select()">' + esc(guideText(a.name, id, res.data.password)) + "</textarea>";
+    }).catch(function (err) {
+      console.warn("서버 함수 재발급 실패, 예전 방식 시도", err);
+      return resetPasswordLocal(id);
+    });
+  }
+  function resetPasswordLocal(id) {
     var a = academies[id], pw = A.randomPassword(), ca;
     return creatorAuth().then(function (c) { ca = c; return ca.signInWithEmailAndPassword(a.email, a.initialPw); }).catch(function () {
-      throw new Error(a.name + ": 원장님이 비밀번호를 바꿔서 여기서는 재발급할 수 없습니다. PC의 AMC\\_반영\\비밀번호재발급.bat 로 재발급해 주세요.");
+      throw new Error(a.name + ": 재발급하지 못했습니다. 서버 함수가 배포됐는지 확인해 주세요. (급하면 PC의 AMC\\_반영\\비밀번호재발급.bat)");
     }).then(function (cred) { return cred.user.updatePassword(pw); })
       .then(function () {
         var b = db.batch();
@@ -384,7 +419,7 @@
         return b.commit();
       })
       .then(function () { return ca.signOut(); })
-      .then(function () { return esc(a.name) + " 새 비밀번호: " + esc(pw); });
+      .then(function () { return esc(a.name) + " 새 비밀번호: <b>" + esc(pw) + "</b>"; });
   }
   function revoke(id) {
     var a = academies[id], b = db.batch();
@@ -397,6 +432,12 @@
     b.update(db.collection("academies").doc(id), { revoked: false });
     b.set(db.collection("academyUsers").doc(a.uid), { academyId: id, name: a.name, email: a.email, pwChangedAt: null });
     return b.commit().then(function () { return esc(a.name) + " 계정을 다시 연결했습니다."; });
+  }
+
+  function guideText(name, id, pw) {
+    return "[제2회 안양시 수학경시대회] 비밀번호 재발급 안내\n\n" + name + " 원장님, 성적·시상 조회 비밀번호를 새로 발급해 드립니다.\n\n" +
+      "▶ 접속 주소: " + academyUrl() + "\n▶ 아이디: " + id + "\n▶ 새 비밀번호: " + pw + "\n\n" +
+      "로그인하시면 비밀번호 변경 창이 뜹니다. 원장님만 아시는 비밀번호로 바꿔 주세요.\n\n(사)안양시학원연합회 보습분과 협의회";
   }
 
   /* ================= 관리자: 업로드 (학원 매칭 엑셀) ================= */

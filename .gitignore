@@ -2,3 +2,4 @@
 *.log
 tools/*.json
 tools/*.csv
+functions/node_modules/
