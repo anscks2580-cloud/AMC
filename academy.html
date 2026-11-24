@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>성적·시상 조회 — AMC 안양시 수학경시대회</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="assets/css/amc.css?v=202611241745">
+<link rel="stylesheet" href="assets/css/amc.css?v=202611241800">
 </head>
 <body class="booth-theme">
 
@@ -15,7 +15,6 @@
 <!-- 로그인 후 오른쪽 위 메뉴 -->
 <nav class="user-bar" id="top-nav" hidden>
   <b data-who></b>
-  <a href="admin.html" data-admin-only hidden>명단·출석</a>
   <a href="#" id="open-pw">비밀번호 변경</a>
   <a href="#" id="logout">로그아웃</a>
 </nav>
@@ -101,7 +100,7 @@
 
     <!-- 관리자: 확인 현황·학원 계정 -->
     <section data-panel="status" hidden>
-      <div class="stats" id="status-stats"></div>
+      <div id="status-summary"></div>
       <div class="card">
         <div class="row row-between">
           <div>
@@ -116,7 +115,7 @@
         <div class="alert" id="ac-msg" hidden style="margin-top:14px"></div>
         <div class="table-wrap" style="margin-top:16px;max-height:70vh">
           <table id="ac-table">
-            <thead><tr><th>학원 (아이디)</th><th>학생</th><th>시상 확인</th><th>계정</th><th>초기 비밀번호</th><th></th></tr></thead>
+            <thead><tr><th>학원 (아이디)</th><th>학원접수 학생</th><th>시상 확인</th><th>계정</th><th>초기 비밀번호</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -182,9 +181,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="assets/js/config.js?v=202611241745"></script>
-<script src="assets/js/app.js?v=202611241745"></script>
-<script src="assets/js/results-common.js?v=202611241745"></script>
-<script src="assets/js/academy.js?v=202611241745"></script>
+<script src="assets/js/config.js?v=202611241800"></script>
+<script src="assets/js/app.js?v=202611241800"></script>
+<script src="assets/js/results-common.js?v=202611241800"></script>
+<script src="assets/js/academy.js?v=202611241800"></script>
 </body>
 </html>

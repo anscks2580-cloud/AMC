@@ -147,7 +147,7 @@
     var map = {};
     results.forEach(function (r) {
       var id = r.academyId || "";
-      if (!map[id]) map[id] = { id: id, name: r.academy || "(학원 없음)", students: 0, awards: 0 };
+      if (!map[id]) map[id] = { id: id, name: id ? r.academy : "개인접수 (관리자만 조회)", students: 0, awards: 0 };
       map[id].students++; if (r.award) map[id].awards++;
     });
     Object.keys(academies).forEach(function (id) { if (!map[id]) map[id] = { id: id, name: academies[id].name, students: 0, awards: 0 }; });
@@ -159,7 +159,7 @@
   function fillPicker() {
     var sel = $("#pick-academy"), keep = view;
     sel.innerHTML = '<option value="*">전체 학원 (' + results.length + "명)</option>" + academyList().map(function (a) {
-      var ok = a.id && confirms[a.id] ? " ✓" : "";
+      var ok = a.id && confirms[a.id] ? " ✓ 확인" : "";
       return '<option value="' + esc(a.id || "!") + '">' + esc(a.name) + " (" + a.students + "명)" + ok + "</option>";
     }).join("");
     sel.value = keep || "*";
@@ -192,7 +192,7 @@
   function currentName() {
     if (!isAdmin) return me ? me.name : "";
     if (view === "*" || !view) return "전체 학원";
-    if (view === "!") return "학원 없음 (개인접수)";
+    if (view === "!") return "개인접수 (관리자만 조회)";
     var a = academyList().filter(function (x) { return x.id === view; })[0];
     return a ? a.name : view;
   }
@@ -257,14 +257,31 @@
   }
   function renderStatus() {
     if (!isAdmin) return;
-    var list = academyList().filter(function (a) { return a.id; });
-    var done = list.filter(function (a) { return confirms[a.id]; }).length;
-    var issued = list.filter(function (a) { var s = acState(a.id); return s === "issued" || s === "changed"; }).length;
-    $("#status-stats").innerHTML = '<div class="stat"><b>' + list.length + '</b><span>학원</span></div>' +
-      '<div class="stat"><b>' + issued + '</b><span>계정 발급</span></div>' +
-      '<div class="stat"><b>' + done + '</b><span>시상 확인 완료</span></div>' +
-      '<div class="stat"><b>' + (list.length - done) + '</b><span>미확인</span></div>';
-    $("#ac-table tbody").innerHTML = list.map(function (r) {
+    var all = academyList().filter(function (a) { return a.id; });
+    var list = all.filter(function (a) { return a.students > 0; });
+    var empty = all.filter(function (a) { return a.students === 0; });
+    var done = list.filter(function (a) { return confirms[a.id]; });
+    var todo = list.filter(function (a) { return !confirms[a.id]; });
+    var personal = results.filter(function (r) { return !r.academyId; }).length;
+    function chips(arr, withTime) {
+      return arr.length ? '<div class="chips">' + arr.map(function (a) {
+        return '<button type="button" class="chip' + (withTime ? "" : " chip-warn") + '" data-see="' + esc(a.id) + '">' + esc(a.name) + " · " + a.students + "명" +
+          (withTime ? " · " + esc(fmt(confirms[a.id].confirmedAt).slice(5)) : "") + "</button>";
+      }).join("") + "</div>" : '<p class="hint" style="margin:0">없음</p>';
+    }
+    $("#status-summary").innerHTML =
+      '<div class="stats">' +
+        '<div class="stat"><b>' + list.length + '</b><span>전체 학원</span></div>' +
+        '<div class="stat"><b style="color:var(--ok)">' + done.length + '</b><span>확인 완료</span></div>' +
+        '<div class="stat"><b style="color:var(--warn)">' + todo.length + '</b><span>확인 미완료</span></div>' +
+        '<div class="stat"><b>' + personal + '</b><span>개인접수 학생 (관리자만)</span></div>' +
+      "</div>" +
+      '<div class="card fold-card">' +
+        '<details class="fold"><summary><span class="dot dot-ok"></span>확인 완료 <b>' + done.length + "곳</b><small>펼치기</small></summary>" + chips(done, true) + "</details>" +
+        '<details class="fold"' + (todo.length && todo.length <= 30 ? "" : "") + '><summary><span class="dot dot-warn"></span>확인 미완료 <b>' + todo.length + "곳</b><small>펼치기</small></summary>" + chips(todo, false) + "</details>" +
+        (empty.length ? '<details class="fold"><summary><span class="dot"></span>학원접수 학생 없음 <b>' + empty.length + "곳</b><small>계정만 있음 · 집계 제외</small></summary>" + '<div class="chips">' + empty.map(function (a) { return '<span class="chip chip-gray">' + esc(a.name) + "</span>"; }).join("") + "</div></details>" : "") +
+      "</div>";
+    $("#ac-table tbody").innerHTML = list.concat(empty).map(function (r) {
       var st = acState(r.id), a = academies[r.id] || {}, c = confirms[r.id];
       var stHtml = { none: '<span class="tag tag-no">미발급</span>', issued: '<span class="tag tag-ok">발급됨</span>', changed: '<span class="tag tag-gold">원장님 변경함</span>', revoked: '<span class="tag tag-warn">해제됨</span>' }[st];
       var pw = st === "issued" ? '<code class="pw">' + esc(a.initialPw) + "</code>" : st === "changed" ? '<span class="hint">원장님이 바꿈</span>' : "";
@@ -272,19 +289,22 @@
         : st === "revoked" ? '<button class="btn btn-line btn-sm" data-relink="' + esc(r.id) + '">다시 연결</button>'
         : '<button class="btn btn-line btn-sm" data-reset="' + esc(r.id) + '">비밀번호 재발급</button> <button class="btn btn-line btn-sm" data-revoke="' + esc(r.id) + '">해제</button>';
       act = '<button class="btn btn-line btn-sm" data-see="' + esc(r.id) + '">보기</button> ' + act;
+      var conf = r.students === 0 ? '<span class="tag tag-no">학생 없음</span>' : c ? '<span class="tag tag-ok">확인</span> <small class="hint">' + esc(fmt(c.confirmedAt)) + "</small>" : '<span class="tag tag-warn">미확인</span>';
       return "<tr><td><b>" + esc(r.name) + '</b><br><small class="hint">아이디: ' + esc(r.id) + "</small></td>" +
-        '<td class="num">' + r.students + "</td>" +
-        "<td>" + (c ? '<span class="tag tag-ok">확인</span> <small class="hint">' + esc(fmt(c.confirmedAt)) + "</small>" : '<span class="tag tag-warn">미확인</span>') + "</td>" +
-        "<td>" + stHtml + "</td><td>" + pw + "</td><td>" + act + "</td></tr>";
+        '<td class="num">' + r.students + "</td><td>" + conf + "</td><td>" + stHtml + "</td><td>" + pw + "</td><td>" + act + "</td></tr>";
     }).join("") || '<tr><td colspan="6" style="text-align:center;color:var(--muted)">성적을 먼저 올리세요.</td></tr>';
   }
+  function seeAcademy(id) {
+    view = id; $("#pick-academy").value = view; render();
+    $$("[data-tab]")[0].click(); window.scrollTo(0, 0);
+  }
   function bindStatus() {
+    $("#status-summary").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-see]"); if (b) seeAcademy(b.dataset.see);
+    });
     $("#ac-table").addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (!b) return;
-      if (b.dataset.see) {
-        view = b.dataset.see; $("#pick-academy").value = view; render();
-        $$("[data-tab]")[0].click(); window.scrollTo(0, 0); return;
-      }
+      if (b.dataset.see) { seeAcademy(b.dataset.see); return; }
       var id = b.dataset.make || b.dataset.reset || b.dataset.revoke || b.dataset.relink;
       var row = academyList().filter(function (r) { return r.id === id; })[0];
       if (!row) return;
@@ -314,9 +334,9 @@
       });
     });
     $("#ac-xlsx").addEventListener("click", function () {
-      var rows = academyList().filter(function (r) { return r.id; }).map(function (r) {
+      var rows = academyList().filter(function (r) { return r.id; }).sort(function (a, b) { return (confirms[a.id] ? 1 : 0) - (confirms[b.id] ? 1 : 0); }).map(function (r) {
         var st = acState(r.id), a = academies[r.id] || {}, c = confirms[r.id];
-        return { 학원: r.name, 아이디: r.id, "초기 비밀번호": st === "issued" ? a.initialPw : "", 계정: { none: "미발급", issued: "발급됨", changed: "원장님 변경함", revoked: "해제됨" }[st], 학생: r.students, "시상 확인": c ? "확인" : "미확인", "확인 시각": c ? fmt(c.confirmedAt) : "", "접속 주소": academyUrl() };
+        return { 학원: r.name, 아이디: r.id, "초기 비밀번호": st === "issued" ? a.initialPw : "", 계정: { none: "미발급", issued: "발급됨", changed: "원장님 변경함", revoked: "해제됨" }[st], 학생: r.students, "시상 확인": r.students === 0 ? "학생 없음" : c ? "확인" : "미확인", "확인 시각": c ? fmt(c.confirmedAt) : "", "접속 주소": academyUrl() };
       });
       var w = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(w, XLSX.utils.json_to_sheet(rows), "학원 계정");

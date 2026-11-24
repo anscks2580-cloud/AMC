@@ -303,3 +303,20 @@ body.booth-theme { position: relative; overflow-x: hidden; }
   .booth.compact .booth-head { padding-top: 64px; }
 }
 @media print { .booth, .bg-grid, .user-bar { display: none !important; } }
+.fold-card { padding: 8px 20px; }
+.fold { border-bottom: 1px solid var(--line); padding: 4px 0; }
+.fold:last-child { border-bottom: 0; }
+.fold summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px; padding: 12px 4px; font-size: 16px; }
+.fold summary::-webkit-details-marker { display: none; }
+.fold summary b { font-size: 18px; color: var(--navy); }
+.fold summary small { margin-left: auto; color: var(--muted); font-size: 13px; }
+.fold summary small::after { content: " ▾"; }
+.fold[open] summary small::after { content: " ▴"; }
+.fold .chips { padding: 0 4px 14px; }
+.fold button.chip { border: 0; cursor: pointer; font: inherit; font-size: 13px; }
+.fold button.chip:hover { filter: brightness(.95); text-decoration: underline; }
+.chip-gray { background: var(--bg); color: var(--muted); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line-strong); flex: none; }
+.dot-ok { background: var(--ok); }
+.dot-warn { background: var(--warn); }
+.booth-theme .tabs { background: var(--sky); border-radius: 6px 6px 0 0; padding: 0 8px; box-shadow: 0 0 0 1px rgba(134,193,224,.5); }
