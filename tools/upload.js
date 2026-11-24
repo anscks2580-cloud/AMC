@@ -19,6 +19,7 @@ const DOCROOT = `projects/${PROJECT}/databases/(default)/documents`;
 const IDT = `https://identitytoolkit.googleapis.com/v1/projects/${PROJECT}`;
 const HERE = __dirname;
 const DRY = process.argv.includes("--dry");
+const RESULTS_ONLY = process.argv.includes("--results-only");  /* 성적만 다시 올림 (계정·확인 기록은 그대로) */
 
 /* firebase-tools 공개 OAuth 클라이언트 (firebase login 이 쓰는 값) */
 const CLIENT_ID = "563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com";
@@ -142,6 +143,15 @@ async function ensureUser(email, pw) {
   log(`성적 파일: ${data.length}명`);
   await getToken();
   log("firebase 로그인 확인");
+
+  if (RESULTS_ONLY) {
+    const old = await listAll("results");
+    await commit(old.map(d => W.del(d.name)));
+    const t = new Date();
+    await commit(data.map(r => W.set("results", "e_" + String(r.examNo).replace(/[\/\s]/g, ""), Object.assign({}, r, { uploadedAt: t }))));
+    log(`성적 ${data.length}명 다시 등록 완료 (정오표 ${data.filter(r => r.marks).length}명). 학원 계정·확인 기록은 그대로입니다.`);
+    return;
+  }
 
   /* 1) 백업 후 테스트 데이터 삭제 */
   const WIPE = ["students", "lookup", "attendance", "results", "confirms"];

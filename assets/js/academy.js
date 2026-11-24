@@ -169,8 +169,7 @@
     $("#ac-title").textContent = currentName();
     $("#round-title").textContent = (cfg.title ? cfg.title + " · " : "") + "응시 학생 " + all.length + "명";
     if (cfg.notice) A.show($("#notice"), esc(cfg.notice).replace(/\n/g, "<br>")); else A.hide($("#notice"));
-    var hasKey = cfg.keys && Object.keys(cfg.keys).some(function (k) { return (cfg.keys[k] || []).some(Boolean); });
-    $("#legend").innerHTML = hasKey ? '<span class="mk mk-o">3</span> 정답 <span class="mk mk-x">2</span> 오답 · 칸 안의 숫자는 학생이 쓴 답' : "문항 칸은 학생이 쓴 답입니다. 중3은 영역별 점수입니다.";
+    $("#legend").innerHTML = '<span class="mk mk-o">3</span> 맞음 <span class="mk mk-x">2</span> 틀림 · 칸 안의 숫자는 학생이 쓴 답입니다. 중3은 영역별 점수입니다.';
     $("#stats").innerHTML = R.statsHtml(all);
     R.renderGrades($("#grade-tables"), list, cfg.keys || {}, { academy: isAdmin && (view === "*" || view === "!") });
     renderConfirm();

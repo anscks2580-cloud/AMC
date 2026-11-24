@@ -29,12 +29,19 @@
 
   function normAns(v) { return String(v == null ? "" : v).replace(/\s+/g, ""); }
   /* 학생 답안 칸: 정답이 있으면 O/X 색, 없으면 답안 그대로 */
-  function ansCell(v, key) {
+  function ansCell(v, mark) {
     var s = normAns(v);
-    if (key == null || key === "") return '<span class="mk' + (s ? "" : " mk-e") + '">' + (s ? esc(s) : "·") + "</span>";
-    return '<span class="mk ' + (s && s === normAns(key) ? "mk-o" : "mk-x") + '">' + (s ? esc(s) : "·") + "</span>";
+    var cls = mark === "O" ? " mk-o" : mark === "X" ? " mk-x" : (s ? "" : " mk-e");
+    return '<span class="mk' + cls + '">' + (s ? esc(s) : "·") + "</span>";
+  }
+  /* 문항별 정오: 성적 파일의 빨간 글씨(틀림)로 만든 marks 가 우선, 없으면 입력한 정답과 비교 */
+  function markOf(r, i, keys) {
+    if (r.marks && r.marks.length) return r.marks[i] === "O" ? "O" : r.marks[i] === "X" ? "X" : null;
+    if (keys && keys[i] != null && keys[i] !== "") return normAns((r.answers || [])[i]) && normAns((r.answers || [])[i]) === normAns(keys[i]) ? "O" : "X";
+    return null;
   }
   function correctCount(r, keys) {
+    if (r.marks && r.marks.length) return r.marks.filter(function (m) { return m === "O"; }).length;
     if (!keys || !keys.length) return null;
     var n = 0;
     (r.answers || []).forEach(function (a, i) { if (keys[i] != null && keys[i] !== "" && normAns(a) && normAns(a) === normAns(keys[i])) n++; });
@@ -56,10 +63,10 @@
     if (!grades.length) { box.innerHTML = '<div class="card"><p class="hint" style="margin:0;text-align:center">조회된 학생이 없습니다.</p></div>'; return; }
     box.innerHTML = grades.map(function (g) {
       var rows = groups[g], labels = rows[0].labels || [], keys = keysByGrade[g] || [];
-      var hasKey = keys.some(function (k) { return k !== "" && k != null; });
+      var hasKey = keys.some(function (k) { return k !== "" && k != null; }) || rows.some(function (r) { return r.marks && r.marks.length; });
       var head = '<tr><th class="sticky-col">성명</th><th>수험번호</th><th>학교</th>' + (opts.academy ? "<th>학원</th>" : "") +
         '<th>총점</th><th>상장</th><th>인증</th>' + (hasKey ? '<th class="q">맞은 수</th>' : "") +
-        labels.map(function (l, i) { return '<th class="q">' + esc(l) + (hasKey && keys[i] ? '<br><small class="key">' + esc(keys[i]) + "</small>" : "") + "</th>"; }).join("") + "</tr>";
+        labels.map(function (l, i) { return '<th class="q">' + esc(l) + (keys[i] ? '<br><small class="key">' + esc(keys[i]) + "</small>" : "") + "</th>"; }).join("") + "</tr>";
       var body = rows.map(function (r) {
         var cc = correctCount(r, keys);
         return "<tr>" +
@@ -68,8 +75,8 @@
           (opts.academy ? "<td>" + esc(r.academy || "(학원 없음)") + "</td>" : "") +
           '<td class="num"><b>' + esc(r.total) + "</b></td><td>" + awardHtml(r.award) + "</td>" +
           "<td>" + (r.cert ? '<span class="tag ' + (r.cert === "인증" ? "tag-ok" : "tag-no") + '">' + esc(r.cert) + "</span>" : "") + "</td>" +
-          (hasKey ? '<td class="q num">' + cc + "/" + labels.length + "</td>" : "") +
-          labels.map(function (l, i) { return '<td class="q">' + ansCell((r.answers || [])[i], hasKey ? keys[i] : null) + "</td>"; }).join("") +
+          (hasKey ? '<td class="q num">' + (cc == null ? "" : cc + "/" + labels.length) + "</td>" : "") +
+          labels.map(function (l, i) { return '<td class="q">' + ansCell((r.answers || [])[i], markOf(r, i, keys)) + "</td>"; }).join("") +
         "</tr>";
       }).join("");
       return '<div class="card grade-card"><h3 class="grade-h">' + esc(g) + ' <small class="hint">' + rows.length + "명</small></h3>" +
@@ -107,7 +114,7 @@
         if (opts.academy) o.학원 = r.academy || "";
         o.접수 = r.entry || ""; o.총점 = isNaN(Number(r.total)) ? r.total : Number(r.total); o.상장 = r.award || ""; o.인증 = r.cert || "";
         var cc = correctCount(r, keys); if (cc != null) o["맞은 수"] = cc;
-        labels.forEach(function (l, i) { o[String(l)] = (r.answers || [])[i] || ""; });
+        labels.forEach(function (l, i) { var a = (r.answers || [])[i] || "", m = markOf(r, i, keys); o[String(l)] = m === "X" ? (a ? a + " ✕" : "✕") : a; });
         return o;
       });
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), g);
