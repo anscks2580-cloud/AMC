@@ -290,8 +290,7 @@
     $("#ac-table tbody").innerHTML = list.concat(empty).map(function (r) {
       var st = acState(r.id), a = academies[r.id] || {}, c = confirms[r.id];
       var stHtml = { none: '<span class="tag tag-no">미발급</span>', issued: '<span class="tag tag-ok">발급됨</span>', changed: '<span class="tag tag-gold">원장님 변경함</span>', revoked: '<span class="tag tag-warn">해제됨</span>' }[st];
-      var cur = a.uid && acUsers[a.uid] ? acUsers[a.uid].currentPw : "";
-      var pw = st === "issued" ? '<code class="pw">' + esc(a.initialPw) + "</code>" : st === "changed" ? (cur ? '<code class="pw">' + esc(cur) + '</code><br><small class="hint">원장님이 바꾼 비밀번호</small>' : '<span class="hint">원장님이 바꿈</span>') : "";
+      var pw = st === "issued" ? '<code class="pw">' + esc(a.initialPw) + "</code>" : st === "changed" ? '<span class="hint">원장님이 바꿈</span>' : "";
       var act = st === "none" ? '<button class="btn btn-sm" data-make="' + esc(r.id) + '">발급</button>'
         : st === "revoked" ? '<button class="btn btn-line btn-sm" data-relink="' + esc(r.id) + '">다시 연결</button>'
         : '<button class="btn btn-line btn-sm" data-reset="' + esc(r.id) + '">비밀번호 재발급</button> <button class="btn btn-line btn-sm" data-revoke="' + esc(r.id) + '">해제</button>';
@@ -345,7 +344,7 @@
     $("#ac-xlsx").addEventListener("click", function () {
       var rows = academyList().filter(function (r) { return r.id; }).sort(function (a, b) { return (confirms[a.id] ? 1 : 0) - (confirms[b.id] ? 1 : 0); }).map(function (r) {
         var st = acState(r.id), a = academies[r.id] || {}, c = confirms[r.id];
-        return { 학원: r.name, 아이디: r.id, "비밀번호": st === "issued" ? a.initialPw : st === "changed" ? ((a.uid && acUsers[a.uid] && acUsers[a.uid].currentPw) || "") : "", 계정: { none: "미발급", issued: "발급됨", changed: "원장님 변경함", revoked: "해제됨" }[st], 학생: r.students, "시상 확인": r.students === 0 ? "학생 없음" : c ? "확인" : "미확인", "확인 시각": c ? fmt(c.confirmedAt) : "", "접속 주소": academyUrl() };
+        return { 학원: r.name, 아이디: r.id, "초기 비밀번호": st === "issued" ? a.initialPw : "", 계정: { none: "미발급", issued: "발급됨", changed: "원장님 변경함", revoked: "해제됨" }[st], 학생: r.students, "시상 확인": r.students === 0 ? "학생 없음" : c ? "확인" : "미확인", "확인 시각": c ? fmt(c.confirmedAt) : "", "접속 주소": academyUrl() };
       });
       var w = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(w, XLSX.utils.json_to_sheet(rows), "학원 계정");
@@ -372,27 +371,20 @@
     }).then(function () { return ca.signOut(); })
       .then(function () { return esc(name) + " 계정 발급 — 아이디 " + esc(id) + " / 비밀번호 " + esc(pw); });
   }
-  /* 재발급: 초기 비밀번호 또는 원장님이 바꾼 비밀번호로 들어가 새 난수로 바꿈 → 원장님은 다음 로그인 때 다시 변경 */
+  /* 재발급: 원장님이 아직 안 바꿨으면 여기서 바로. 바꾼 뒤(잊어버린 경우)는 PC의 비밀번호재발급.bat 로 */
   function resetPassword(id) {
     var a = academies[id], pw = A.randomPassword(), ca;
-    var cur = a.uid && acUsers[a.uid] ? acUsers[a.uid].currentPw : "";
-    return creatorAuth().then(function (c) {
-      ca = c;
-      return ca.signInWithEmailAndPassword(a.email, cur || a.initialPw).catch(function () {
-        if (cur && a.initialPw) return ca.signInWithEmailAndPassword(a.email, a.initialPw);
-        throw new Error("x");
-      });
-    }).catch(function () {
-      throw new Error(a.name + ": 저장된 비밀번호로 들어갈 수 없어 재발급하지 못했습니다.");
+    return creatorAuth().then(function (c) { ca = c; return ca.signInWithEmailAndPassword(a.email, a.initialPw); }).catch(function () {
+      throw new Error(a.name + ": 원장님이 비밀번호를 바꿔서 여기서는 재발급할 수 없습니다. PC의 AMC\\_반영\\비밀번호재발급.bat 로 재발급해 주세요.");
     }).then(function (cred) { return cred.user.updatePassword(pw); })
       .then(function () {
         var b = db.batch();
         b.update(db.collection("academies").doc(id), { initialPw: pw });
-        if (a.uid && acUsers[a.uid]) b.update(db.collection("academyUsers").doc(a.uid), { pwChangedAt: null, currentPw: firebase.firestore.FieldValue.delete() });
+        if (a.uid && acUsers[a.uid]) b.update(db.collection("academyUsers").doc(a.uid), { pwChangedAt: null });
         return b.commit();
       })
       .then(function () { return ca.signOut(); })
-      .then(function () { return esc(a.name) + " 새 비밀번호: " + esc(pw) + " (원장님은 다음 로그인 때 다시 바꾸게 됩니다)"; });
+      .then(function () { return esc(a.name) + " 새 비밀번호: " + esc(pw); });
   }
   function revoke(id) {
     var a = academies[id], b = db.batch();
@@ -527,7 +519,7 @@
     user.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(user.email, cur)).then(function () {
       return user.updatePassword(nx);
     }).then(function () {
-      if (!isAdmin) return db.collection("academyUsers").doc(user.uid).update({ pwChangedAt: FV(), currentPw: nx }).catch(function () {});
+      if (!isAdmin) return db.collection("academyUsers").doc(user.uid).update({ pwChangedAt: FV() }).catch(function () {});
       if (user.email === A.ADMIN_EMAIL) return db.collection("private").doc("admin").set({ pwChangedAt: FV(), initialPw: firebase.firestore.FieldValue.delete() }, { merge: true }).catch(function () {});
     }).then(function () {
       if (me) me.pwChangedAt = true;

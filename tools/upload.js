@@ -19,7 +19,8 @@ const DOCROOT = `projects/${PROJECT}/databases/(default)/documents`;
 const IDT = `https://identitytoolkit.googleapis.com/v1/projects/${PROJECT}`;
 const HERE = __dirname;
 const DRY = process.argv.includes("--dry");
-const RESULTS_ONLY = process.argv.includes("--results-only");  /* 성적만 다시 올림 (계정·확인 기록은 그대로) */
+const RESULTS_ONLY = process.argv.includes("--results-only");
+const RESET = process.argv.includes("--reset");  /* 원장님 비밀번호 재발급 */  /* 성적만 다시 올림 (계정·확인 기록은 그대로) */
 
 /* firebase-tools 공개 OAuth 클라이언트 (firebase login 이 쓰는 값) */
 const CLIENT_ID = "563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com";
@@ -138,7 +139,35 @@ async function ensureUser(email, pw) {
   return j.localId;
 }
 
+function ask(q) {
+  return new Promise(res => { const rl = require("readline").createInterface({ input: process.stdin, output: process.stdout }); rl.question(q, a => { rl.close(); res(a.trim()); }); });
+}
+async function resetMode() {
+  await getToken();
+  const list = (await listAll("academies")).filter(d => !d.data.revoked).sort((a, b) => String(a.data.name).localeCompare(String(b.data.name), "ko"));
+  const users = {}; (await listAll("academyUsers")).forEach(d => { users[d.id] = d.data; });
+  log("\n번호  학원 (비밀번호 상태)");
+  list.forEach((d, i) => { const u = users[d.data.uid] || {}; log(`${String(i + 1).padStart(3)}.  ${d.data.name}  ${u.pwChangedAt ? "(원장님 변경함)" : "(초기 비밀번호 사용 중)"}`); });
+  const n = parseInt(await ask("\n재발급할 학원 번호를 입력하고 Enter: "), 10);
+  const a = list[n - 1];
+  if (!a) die("번호가 맞지 않습니다.");
+  const pw = randomPassword();
+  const u = await findUser(a.data.email);
+  if (!u) die("Firebase 에서 이 학원 계정을 찾지 못했습니다.");
+  await api(`${IDT}/accounts:update`, { method: "POST", body: JSON.stringify({ localId: u.localId, password: pw }) }, true);
+  await commit([
+    W.merge("academies", a.id, { initialPw: pw }),
+    W.merge("academyUsers", u.localId, { pwChangedAt: null })
+  ]);
+  log(`\n완료! ${a.data.name} 새 비밀번호: ${pw}`);
+  log("원장님은 다음 로그인 때 다시 비밀번호를 바꾸게 됩니다. 아래 문구를 복사해 보내세요.\n");
+  log("----------------------------------------");
+  log(`[제2회 안양시 수학경시대회] 비밀번호 재발급 안내\n\n${a.data.name} 원장님, 요청하신 비밀번호를 새로 발급해 드립니다.\n\n▶ 접속 주소: ${SITE}\n▶ 아이디: ${a.id}\n▶ 새 비밀번호: ${pw}\n\n로그인하시면 비밀번호 변경 창이 뜹니다. 원장님만 아시는 비밀번호로 바꿔 주세요.\n\n(사)안양시학원연합회 보습분과 협의회`);
+  log("----------------------------------------");
+}
+
 (async function main() {
+  if (RESET) return resetMode();
   const data = JSON.parse(fs.readFileSync(path.join(HERE, "amc_data.json"), "utf8"));
   log(`성적 파일: ${data.length}명`);
   await getToken();
