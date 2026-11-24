@@ -102,22 +102,30 @@
     };
   }
 
-  /* 학년별 시트로 엑셀 내보내기 */
+  /* 엑셀 내보내기: 첫 시트 「전체」에 모든 학생, 그다음 학년별 문항 정오표 시트 */
   function exportXlsx(list, keysByGrade, filename, opts) {
     opts = opts || {};
-    var wb = XLSX.utils.book_new(), groups = {};
-    list.forEach(function (r) { (groups[r.grade] = groups[r.grade] || []).push(r); });
+    var wb = XLSX.utils.book_new(), groups = {}, sorted = sortResults(list);
+    var base = ["수험번호", "성명", "학년", "학교"].concat(opts.academy ? ["학원"] : []).concat(["접수", "총점", "상장", "인증", "맞은 수"]);
+    function baseRow(r) {
+      var cc = correctCount(r, (keysByGrade || {})[r.grade] || []);
+      return [r.examNo || "", r.name, r.grade || "", r.school || ""].concat(opts.academy ? [r.academy || ""] : [])
+        .concat([r.entry || "", isNaN(Number(r.total)) || r.total === "" ? r.total : Number(r.total), r.award || "", r.cert || "", cc == null ? "" : cc + "/" + (r.labels || []).length]);
+    }
+    var all = [base].concat(sorted.map(baseRow));
+    var ws = XLSX.utils.aoa_to_sheet(all);
+    ws["!cols"] = base.map(function (h) { return { wch: h === "상장" ? 26 : h === "학교" || h === "학원" ? 18 : 10 }; });
+    XLSX.utils.book_append_sheet(wb, ws, "전체 " + sorted.length + "명");
+    sorted.forEach(function (r) { (groups[r.grade] = groups[r.grade] || []).push(r); });
     Object.keys(groups).sort(function (a, b) { return gradeIdx(a) - gradeIdx(b); }).forEach(function (g) {
       var rows = groups[g], labels = rows[0].labels || [], keys = (keysByGrade || {})[g] || [];
-      var data = rows.map(function (r) {
-        var o = { 수험번호: r.examNo, 성명: r.name, 학년: g, 학교: r.school || "" };
-        if (opts.academy) o.학원 = r.academy || "";
-        o.접수 = r.entry || ""; o.총점 = isNaN(Number(r.total)) ? r.total : Number(r.total); o.상장 = r.award || ""; o.인증 = r.cert || "";
-        var cc = correctCount(r, keys); if (cc != null) o["맞은 수"] = cc;
-        labels.forEach(function (l, i) { var a = (r.answers || [])[i] || "", m = markOf(r, i, keys); o[String(l)] = m === "X" ? (a ? a + " ✕" : "✕") : a; });
-        return o;
-      });
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), g);
+      var aoa = [base.concat(labels.map(String))].concat(rows.map(function (r) {
+        return baseRow(r).concat(labels.map(function (l, i) {
+          var a = (r.answers || [])[i] || "", m = markOf(r, i, keys);
+          return m === "X" ? (a ? a + " ✕" : "✕") : a;
+        }));
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), g + " 정오표 " + rows.length + "명");
     });
     XLSX.writeFile(wb, filename);
   }
