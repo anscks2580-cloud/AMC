@@ -69,13 +69,13 @@ service cloud.firestore {
       allow read, write: if admin();
     }
 
-    // 원장 계정 연결 정보: 관리자는 전체, 원장님은 본인 것만 읽고 비밀번호 변경 시각만 고칠 수 있음
+    // 원장 계정 연결 정보: 관리자는 전체, 원장님은 본인 것만 읽고 비밀번호 변경 시각·바꾼 비밀번호만 고칠 수 있음
     match /academyUsers/{uid} {
       allow read: if admin() || (academyUser() && request.auth.uid == uid);
       allow create, delete: if admin();
       allow update: if admin()
         || (academyUser() && request.auth.uid == uid
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pwChangedAt']));
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pwChangedAt', 'currentPw']));
     }
   }
 }
