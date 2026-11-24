@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>성적·시상 조회 — AMC 안양시 수학경시대회</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="assets/css/amc.css?v=202611242020">
+<link rel="stylesheet" href="assets/css/amc.css?v=202611242030">
 </head>
 <body class="booth-theme">
 
@@ -76,6 +76,7 @@
             <p class="hint" id="round-title" style="margin:4px 0 0"></p>
           </div>
           <div class="row no-print">
+            <button class="btn btn-ochre btn-sm" id="open-guide">상격별 시상 확인하기</button>
             <button class="btn btn-line btn-sm" id="dl-xlsx">엑셀 다운로드</button>
             <button class="btn btn-line btn-sm" onclick="window.print()">인쇄</button>
           </div>
@@ -158,6 +159,14 @@
   </div>
 </main>
 
+<!-- 상격별 시상 안내 -->
+<div class="modal guide-modal" id="guide-modal" hidden>
+  <div class="guide-box">
+    <button type="button" class="guide-close" id="guide-close" aria-label="닫기">닫기 ✕</button>
+    <img src="assets/img/award-guide.jpg?v=1" alt="제2회 AMC 안양시 수학경시대회 상격별 시상 안내 — 대상: 안양시장상, 경기도의회의장상 / 금상: 국회의원상, 안양시의회의장상 / 은상: 안양시의회의원상, 경기도의회의원상 / 동상: 경기도학원연합회장상, 안양시학원연합회장상 / 장려상: 안양시학원연합회보습협의회장상 / 특별상: 지학사 대표이사상, 풍산자 연구소장상">
+  </div>
+</div>
+
 <!-- 원장님께 보낼 안내 문자 (관리자) -->
 <div class="modal" id="msg-modal" hidden>
   <div class="modal-box card" style="max-width:520px">
@@ -197,9 +206,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="assets/js/config.js?v=202611242020"></script>
-<script src="assets/js/app.js?v=202611242020"></script>
-<script src="assets/js/results-common.js?v=202611242020"></script>
-<script src="assets/js/academy.js?v=202611242020"></script>
+<script src="assets/js/config.js?v=202611242030"></script>
+<script src="assets/js/app.js?v=202611242030"></script>
+<script src="assets/js/results-common.js?v=202611242030"></script>
+<script src="assets/js/academy.js?v=202611242030"></script>
 </body>
 </html>

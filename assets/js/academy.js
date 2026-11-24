@@ -234,6 +234,12 @@
     }).catch(function (err) { alert("저장하지 못했습니다. (" + (err.code || err.message) + ")"); b.disabled = false; });
   }
 
+  /* 상격별 시상 안내 */
+  $("#open-guide").addEventListener("click", function () { $("#guide-modal").hidden = false; });
+  $("#guide-close").addEventListener("click", function () { $("#guide-modal").hidden = true; });
+  $("#guide-modal").addEventListener("click", function (e) { if (e.target === $("#guide-modal")) $("#guide-modal").hidden = true; });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") $("#guide-modal").hidden = true; });
+
   ["#f-grade", "#f-award"].forEach(function (s) { $(s).addEventListener("change", render); });
   $("#q").addEventListener("input", render);
   $("#dl-xlsx").addEventListener("click", function () {
