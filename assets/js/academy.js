@@ -220,7 +220,7 @@
     { key: "jihaksa", name: "지학사 대표이사상" },
     { key: "pungsanja", name: "풍산자 수학연구소장상" }
   ];
-  var pickBlocked = false, pickDraft = {};
+  var pickBlocked = false, pickDraft = {}, pickEditing = false;
   function studentLabel(r) {
     return r.name + " (" + (r.grade || "") + (r.school ? " · " + r.school : "") + ") · " + R.awardName(r.award);
   }
@@ -249,10 +249,24 @@
       return;
     }
     var saved = picks[me.academyId];
+    /* 제출한 뒤: 결과만 보이고 「수정하기」로 고침 */
+    if (saved && !pickEditing) {
+      card.innerHTML = '<h3 class="sp-h">특별상 추천 <span class="tag tag-ok">제출 완료 ' + esc(fmt(saved.submittedAt)) + "</span></h3>" +
+        '<div class="sp-grid">' + SPECIALS.map(function (sp) {
+          return '<div class="sp-item"><div class="sp-name">' + esc(sp.name) + '</div><div class="sp-val">' + pickHtml(saved[sp.key]) + "</div></div>";
+        }).join("") + "</div>" +
+        '<div class="row" style="margin-top:14px"><button class="btn btn-line" id="sp-edit">수정하기</button></div>';
+      $("#sp-edit").addEventListener("click", function () {
+        pickEditing = true;
+        SPECIALS.forEach(function (sp) { pickDraft[sp.key] = saved[sp.key] ? saved[sp.key].docId : ""; });
+        renderSpecial();
+      });
+      return;
+    }
     SPECIALS.forEach(function (sp) { if (pickDraft[sp.key] === undefined) pickDraft[sp.key] = saved && saved[sp.key] ? saved[sp.key].docId : ""; });
     var awarded = results.filter(function (r) { return r.award; });
-    card.innerHTML = '<h3 class="sp-h">특별상 추천 제출 ' + (saved ? '<span class="tag tag-ok">제출 완료 ' + esc(fmt(saved.submittedAt)) + "</span>" : '<span class="tag tag-warn">미제출</span>') + "</h3>" +
-      '<p class="hint" style="margin:0 0 14px">이미 상을 받은 우리 학원 학생 중에서 상마다 한 명씩 골라 제출해 주세요. 제출한 뒤에도 바꿔서 다시 제출할 수 있습니다.</p>' +
+    card.innerHTML = '<h3 class="sp-h">특별상 추천 제출 ' + (saved ? '<span class="tag tag-gold">수정 중</span>' : '<span class="tag tag-warn">미제출</span>') + "</h3>" +
+      '<p class="hint" style="margin:0 0 14px">이미 상을 받은 우리 학원 학생 중에서 상마다 한 명씩 골라 제출해 주세요. 제출한 뒤에도 「수정하기」로 바꿀 수 있습니다.</p>' +
       '<div class="sp-grid">' + SPECIALS.map(function (sp) {
         return '<div class="sp-item" data-sp="' + sp.key + '">' +
           '<div class="sp-name">' + esc(sp.name) + "</div>" +
@@ -264,7 +278,8 @@
           '<div class="sp-chosen">선택: <b>' + esc(chosenLabel(pickDraft[sp.key])) + "</b></div>" +
         "</div>";
       }).join("") + "</div>" +
-      '<div class="row" style="margin-top:14px"><button class="btn btn-ochre" id="sp-submit">' + (saved ? "다시 제출하기" : "제출하기") + '</button><span class="hint" id="sp-msg"></span></div>';
+      '<div class="row" style="margin-top:14px"><button class="btn btn-ochre" id="sp-submit">' + (saved ? "수정 내용 제출" : "제출하기") + "</button>" +
+      (saved ? '<button class="btn btn-line" id="sp-cancel">수정 취소</button>' : "") + "</div>";
     $$(".sp-item", card).forEach(function (box) {
       var key = box.dataset.sp, sel = $(".sp-sel", box), q = $(".sp-q", box);
       sel.addEventListener("change", function () { pickDraft[key] = sel.value; $(".sp-chosen b", box).textContent = chosenLabel(sel.value); });
@@ -274,6 +289,7 @@
       });
     });
     $("#sp-submit").addEventListener("click", submitPicks);
+    if ($("#sp-cancel")) $("#sp-cancel").addEventListener("click", function () { pickEditing = false; pickDraft = {}; renderSpecial(); });
   }
   function docIdOf(r) { return "e_" + String(r.examNo || "").replace(/[\/\s]/g, ""); }
   function findByDocId(id) { return results.filter(function (r) { return docIdOf(r) === id; })[0]; }
@@ -282,7 +298,8 @@
     var missing = SPECIALS.filter(function (sp) { return !pickDraft[sp.key] || !findByDocId(pickDraft[sp.key]); });
     if (missing.length) { alert(missing.map(function (m) { return m.name; }).join(", ") + " 추천 학생을 골라 주세요."); return; }
     var lines = SPECIALS.map(function (sp) { var r = findByDocId(pickDraft[sp.key]); return "· " + sp.name + ": " + r.name + " (" + r.grade + ")"; }).join("\n");
-    if (!confirm("아래 학생으로 특별상 추천을 제출할까요?\n\n" + lines)) return;
+    var isEdit = !!picks[me.academyId];
+    if (!confirm("아래 학생으로 특별상 추천을 " + (isEdit ? "수정" : "제출") + "할까요?\n\n" + lines)) return;
     var data = { name: me.name || me.academyId, uid: auth.currentUser.uid, submittedAt: firebase.firestore.Timestamp.now() };
     SPECIALS.forEach(function (sp) {
       var r = findByDocId(pickDraft[sp.key]);
@@ -290,8 +307,8 @@
     });
     var b = $("#sp-submit"); b.disabled = true;
     db.collection("specialPicks").doc(me.academyId).set(data).then(function () {
-      picks[me.academyId] = data; renderSpecial();
-      alert("특별상 추천을 제출했습니다.");
+      picks[me.academyId] = data; pickEditing = false; pickDraft = {}; renderSpecial();
+      alert(isEdit ? "특별상 추천을 수정했습니다." : "특별상 추천을 제출했습니다.");
     }).catch(function (err) {
       b.disabled = false;
       alert("제출하지 못했습니다. (" + (err.code || err.message) + ")");
