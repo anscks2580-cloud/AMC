@@ -29,7 +29,7 @@
     return i === -1 ? 500 : i;
   }
   /* 화면에 보일 공식 이름 */
-  var AWARD_DISPLAY = { "안양시의회의원상": "안양시의원상", "경기도의회의원상": "경기도의원상", "지학사대표이사상": "지학사 대표이사상", "풍산자연구소장상": "풍산자 연구소장상" };
+  var AWARD_DISPLAY = { "안양시의회의원상": "안양시의원상", "경기도의회의원상": "경기도의원상", "지학사대표이사상": "지학사 대표이사상", "풍산자연구소장상": "풍산자 수학연구소장상" };
   function awardName(a) { var k = awardKey(a); return AWARD_DISPLAY[k] || String(a || ""); }
   function awardTier(a) { var i = awardIdx(a); return AWARD_TIER[i] || ""; }
 

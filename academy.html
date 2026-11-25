@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>성적·시상 조회 — AMC 안양시 수학경시대회</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="assets/css/amc.css?v=202611251000">
+<link rel="stylesheet" href="assets/css/amc.css?v=202611251120">
 </head>
 <body class="booth-theme">
 
@@ -59,6 +59,7 @@
     <!-- 관리자 메뉴 -->
     <div class="tabs" id="admin-tabs" role="tablist" hidden>
       <button role="tab" aria-selected="true" data-tab="view">학원별 보기</button>
+      <button role="tab" aria-selected="false" data-tab="special">특별상 추천</button>
       <button role="tab" aria-selected="false" data-tab="status">학원 계정</button>
     </div>
 
@@ -85,6 +86,9 @@
         <div class="confirm-box no-print" id="confirm-box"></div>
       </div>
 
+      <!-- 특별상 추천 (원장님 제출 / 관리자 학원별 보기) -->
+      <div class="card special-card no-print" id="special-card" hidden></div>
+
       <div class="stats" id="stats"></div>
 
       <div class="card no-print" style="padding:16px 20px">
@@ -99,6 +103,28 @@
     </section>
 
     <!-- 관리자: 확인 현황·학원 계정 -->
+    <!-- 관리자: 특별상 추천 현황 -->
+    <section data-panel="special" hidden>
+      <div class="stats" id="sp-stats"></div>
+      <div class="card">
+        <div class="row row-between">
+          <div>
+            <h2 style="margin:0">특별상 추천 현황</h2>
+            <p class="hint" style="margin:4px 0 0">학원마다 지학사 대표이사상·풍산자 수학연구소장상에 한 명씩 추천해 제출합니다. 원장님이 다시 제출하면 최신 내용으로 바뀝니다.</p>
+          </div>
+          <div class="row ac-actions">
+            <button class="btn btn-line btn-sm" id="sp-xlsx">추천 명단 엑셀</button>
+          </div>
+        </div>
+        <div class="table-wrap" style="margin-top:16px;max-height:72vh">
+          <table id="sp-table">
+            <thead><tr><th>학원</th><th>지학사 대표이사상</th><th>풍산자 수학연구소장상</th><th>제출</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <section data-panel="status" hidden>
       <div id="status-summary" hidden></div>
       <div class="card">
@@ -206,9 +232,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="assets/js/config.js?v=202611251000"></script>
-<script src="assets/js/app.js?v=202611251000"></script>
-<script src="assets/js/results-common.js?v=202611251000"></script>
-<script src="assets/js/academy.js?v=202611251000"></script>
+<script src="assets/js/config.js?v=202611251120"></script>
+<script src="assets/js/app.js?v=202611251120"></script>
+<script src="assets/js/results-common.js?v=202611251120"></script>
+<script src="assets/js/academy.js?v=202611251120"></script>
 </body>
 </html>

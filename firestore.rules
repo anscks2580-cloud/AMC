@@ -64,6 +64,16 @@ service cloud.firestore {
       allow delete: if admin();
     }
 
+    // 특별상 추천: 원장님은 자기 학원 것만 읽고 제출(다시 제출 포함), 관리자는 전체
+    match /specialPicks/{academyId} {
+      allow read: if admin() || (academyUser() && academyId == myAcademy());
+      allow create, update: if admin()
+        || (academyUser() && academyId == myAcademy()
+            && request.resource.data.keys().hasOnly(['jihaksa', 'pungsanja', 'submittedAt', 'name', 'uid'])
+            && request.resource.data.uid == request.auth.uid);
+      allow delete: if admin();
+    }
+
     // 관리자 전용 보관(admin 아이디 초기 비밀번호 등)
     match /private/{doc} {
       allow read, write: if admin();

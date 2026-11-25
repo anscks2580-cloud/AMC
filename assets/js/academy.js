@@ -9,7 +9,7 @@
   var A = window.AMCApp, R = window.AMCResults, $ = A.$, $$ = A.$$, esc = A.esc, db = A.db, auth = A.auth;
   var FV = function () { return firebase.firestore.FieldValue.serverTimestamp(); };
 
-  var isAdmin = false, me = null, cfg = {}, results = [], academies = {}, acUsers = {}, confirms = {}, view = "";
+  var isAdmin = false, me = null, cfg = {}, results = [], academies = {}, acUsers = {}, confirms = {}, picks = {}, view = "";
 
   /* ---------- 전체 화면 바둑판 배경 (포토부스) ---------- */
   var BG_NAMES = ["가람스카이수학학원", "강의하는아이들", "대시나루국어학원", "대치레몬", "동일학원", "두드림창의수학학원", "리더스학원", "민단수학과학학원", "바른길수학학원", "백년대계학림학원", "생각이반짝창의수학", "송우찬수학학원", "수학이만드는세상학원", "스카이학원", "유수하수학학원", "주선생영수학학원", "지엔탑학원", "평촌다수인수학학원", "한빛주니어학원", "한빛학원", "G1230수학학원", "G1230안양캠퍼스", "JTD수학과학학원"];
@@ -95,12 +95,15 @@
       if (!cfg.resultsOpen) { showClosed("성적·시상 조회 기간이 아닙니다", "조회가 열리면 이 화면에서 바로 확인할 수 있습니다." + (cfg.notice ? "<br><br>" + esc(cfg.notice) : "")); return null; }
       return Promise.all([
         db.collection("results").where("academyId", "==", me.academyId).get(),
-        db.collection("confirms").doc(me.academyId).get().catch(function () { return null; })
+        db.collection("confirms").doc(me.academyId).get().catch(function () { return null; }),
+        db.collection("specialPicks").doc(me.academyId).get().catch(function () { return "blocked"; })
       ]);
     }).then(function (res) {
       if (!res) return;
       results = R.sortResults(res[0].docs.map(function (d) { return d.data(); }));
       if (res[1] && res[1].exists) confirms[me.academyId] = res[1].data();
+      if (res[2] === "blocked") pickBlocked = true;
+      else if (res[2] && res[2].exists) picks[me.academyId] = res[2].data();
       view = me.academyId;
       $("#view").hidden = false;
       setupFilters();
@@ -135,6 +138,8 @@
     db.collection("academies").onSnapshot(function (snap) { academies = {}; snap.docs.forEach(function (d) { academies[d.id] = d.data(); }); renderStatus(); }, onErr);
     db.collection("academyUsers").onSnapshot(function (snap) { acUsers = {}; snap.docs.forEach(function (d) { acUsers[d.id] = d.data(); }); renderStatus(); }, onErr);
     db.collection("confirms").onSnapshot(function (snap) { confirms = {}; snap.docs.forEach(function (d) { confirms[d.id] = d.data(); }); renderStatus(); render(); fillPicker(); }, onErr);
+    db.collection("specialPicks").onSnapshot(function (snap) { picks = {}; snap.docs.forEach(function (d) { picks[d.id] = d.data(); }); renderSpecialAdmin(); renderSpecial(); }, function (err) { console.warn("특별상 추천 읽기 실패 (규칙 확인)", err); });
+    $("#sp-xlsx").addEventListener("click", exportPicks);
     db.collection("settings").doc("results").onSnapshot(function (d) { cfg = d.exists ? d.data() : {}; fillSettings(); render(); }, onErr);
   }
   function onErr(err) {
@@ -206,6 +211,123 @@
     $("#stats").innerHTML = R.statsHtml(all);
     R.renderGrades($("#grade-tables"), list, cfg.keys || {}, { academy: isAdmin && (view === "*" || view === "!") });
     renderConfirm();
+    renderSpecial();
+  }
+
+  /* ================= 특별상 추천 =================
+     학원마다 지학사 대표이사상·풍산자 수학연구소장상에 한 명씩 (이미 상을 받은 우리 학원 학생 중에서) */
+  var SPECIALS = [
+    { key: "jihaksa", name: "지학사 대표이사상" },
+    { key: "pungsanja", name: "풍산자 수학연구소장상" }
+  ];
+  var pickBlocked = false, pickDraft = {};
+  function studentLabel(r) {
+    return r.name + " (" + (r.grade || "") + (r.school ? " · " + r.school : "") + ") · " + R.awardName(r.award);
+  }
+  function pickHtml(p) {
+    if (!p) return '<span class="tag tag-warn">미선택</span>';
+    return "<b>" + esc(p.name) + '</b> <small class="hint">' + esc((p.grade || "") + (p.school ? " · " + p.school : "")) + "</small>" +
+      (p.award ? '<br><small class="hint">받은 상: ' + esc(R.awardName(p.award)) + "</small>" : "");
+  }
+  function renderSpecial() {
+    var card = $("#special-card"); if (!card) return;
+    /* 관리자 「학원별 보기」: 특정 학원을 골랐을 때만, 읽기 전용 */
+    if (isAdmin) {
+      if (!view || view === "*" || view === "!") { card.hidden = true; return; }
+      var pk = picks[view];
+      card.hidden = false;
+      card.innerHTML = '<h3 class="sp-h">특별상 추천 <small class="hint">' + (pk ? "제출 " + esc(fmt(pk.submittedAt)) : "아직 제출 안 함") + "</small></h3>" +
+        '<div class="sp-grid">' + SPECIALS.map(function (sp) {
+          return '<div class="sp-item"><div class="sp-name">' + esc(sp.name) + '</div><div class="sp-val">' + pickHtml(pk && pk[sp.key]) + "</div></div>";
+        }).join("") + "</div>";
+      return;
+    }
+    if (!me) { card.hidden = true; return; }
+    card.hidden = false;
+    if (pickBlocked) {
+      card.innerHTML = '<h3 class="sp-h">특별상 추천</h3><p class="hint" style="margin:0">아직 추천을 받을 수 없습니다. 잠시 후 다시 들어와 주세요.</p>';
+      return;
+    }
+    var saved = picks[me.academyId];
+    SPECIALS.forEach(function (sp) { if (pickDraft[sp.key] === undefined) pickDraft[sp.key] = saved && saved[sp.key] ? saved[sp.key].docId : ""; });
+    var awarded = results.filter(function (r) { return r.award; });
+    card.innerHTML = '<h3 class="sp-h">특별상 추천 제출 ' + (saved ? '<span class="tag tag-ok">제출 완료 ' + esc(fmt(saved.submittedAt)) + "</span>" : '<span class="tag tag-warn">미제출</span>') + "</h3>" +
+      '<p class="hint" style="margin:0 0 14px">이미 상을 받은 우리 학원 학생 중에서 상마다 한 명씩 골라 제출해 주세요. 제출한 뒤에도 바꿔서 다시 제출할 수 있습니다.</p>' +
+      '<div class="sp-grid">' + SPECIALS.map(function (sp) {
+        return '<div class="sp-item" data-sp="' + sp.key + '">' +
+          '<div class="sp-name">' + esc(sp.name) + "</div>" +
+          '<input class="input sp-q" placeholder="이름·학교로 찾기">' +
+          '<select class="input sp-sel" size="6">' + awarded.map(function (r) {
+            var id = docIdOf(r);
+            return '<option value="' + esc(id) + '"' + (pickDraft[sp.key] === id ? " selected" : "") + ">" + esc(studentLabel(r)) + "</option>";
+          }).join("") + "</select>" +
+          '<div class="sp-chosen">선택: <b>' + esc(chosenLabel(pickDraft[sp.key])) + "</b></div>" +
+        "</div>";
+      }).join("") + "</div>" +
+      '<div class="row" style="margin-top:14px"><button class="btn btn-ochre" id="sp-submit">' + (saved ? "다시 제출하기" : "제출하기") + '</button><span class="hint" id="sp-msg"></span></div>';
+    $$(".sp-item", card).forEach(function (box) {
+      var key = box.dataset.sp, sel = $(".sp-sel", box), q = $(".sp-q", box);
+      sel.addEventListener("change", function () { pickDraft[key] = sel.value; $(".sp-chosen b", box).textContent = chosenLabel(sel.value); });
+      q.addEventListener("input", function () {
+        var t = A.normName(q.value).toLowerCase();
+        Array.prototype.forEach.call(sel.options, function (o) { o.hidden = !!t && A.normName(o.textContent).toLowerCase().indexOf(t) === -1; });
+      });
+    });
+    $("#sp-submit").addEventListener("click", submitPicks);
+  }
+  function docIdOf(r) { return "e_" + String(r.examNo || "").replace(/[\/\s]/g, ""); }
+  function findByDocId(id) { return results.filter(function (r) { return docIdOf(r) === id; })[0]; }
+  function chosenLabel(id) { var r = id && findByDocId(id); return r ? studentLabel(r) : "없음"; }
+  function submitPicks() {
+    var missing = SPECIALS.filter(function (sp) { return !pickDraft[sp.key] || !findByDocId(pickDraft[sp.key]); });
+    if (missing.length) { alert(missing.map(function (m) { return m.name; }).join(", ") + " 추천 학생을 골라 주세요."); return; }
+    var lines = SPECIALS.map(function (sp) { var r = findByDocId(pickDraft[sp.key]); return "· " + sp.name + ": " + r.name + " (" + r.grade + ")"; }).join("\n");
+    if (!confirm("아래 학생으로 특별상 추천을 제출할까요?\n\n" + lines)) return;
+    var data = { name: me.name || me.academyId, uid: auth.currentUser.uid, submittedAt: firebase.firestore.Timestamp.now() };
+    SPECIALS.forEach(function (sp) {
+      var r = findByDocId(pickDraft[sp.key]);
+      data[sp.key] = { docId: pickDraft[sp.key], examNo: r.examNo, name: r.name, grade: r.grade || "", school: r.school || "", award: r.award || "" };
+    });
+    var b = $("#sp-submit"); b.disabled = true;
+    db.collection("specialPicks").doc(me.academyId).set(data).then(function () {
+      picks[me.academyId] = data; renderSpecial();
+      alert("특별상 추천을 제출했습니다.");
+    }).catch(function (err) {
+      b.disabled = false;
+      alert("제출하지 못했습니다. (" + (err.code || err.message) + ")");
+    });
+  }
+  /* 관리자: 학원별 추천 현황 */
+  function renderSpecialAdmin() {
+    if (!isAdmin) return;
+    var list = academyList().filter(function (a) { return a.id && a.students > 0; });
+    var done = list.filter(function (a) { return picks[a.id]; }).length;
+    $("#sp-stats").innerHTML = '<div class="stat"><b>' + list.length + '</b><span>대상 학원</span></div>' +
+      '<div class="stat"><b style="color:var(--ok)">' + done + '</b><span>제출 완료</span></div>' +
+      '<div class="stat"><b style="color:var(--warn)">' + (list.length - done) + '</b><span>미제출</span></div>';
+    var sorted = list.slice().sort(function (a, b) { return (picks[b.id] ? 1 : 0) - (picks[a.id] ? 1 : 0) || a.name.localeCompare(b.name, "ko"); });
+    $("#sp-table tbody").innerHTML = sorted.map(function (a) {
+      var pk = picks[a.id];
+      return '<tr><td class="s-ac"><b>' + esc(a.name) + '</b><br><small class="hint">학생 ' + a.students + "명</small></td>" +
+        SPECIALS.map(function (sp) { return '<td class="s-pick"><span class="m-only sp-mlabel">' + esc(sp.name) + "</span>" + pickHtml(pk && pk[sp.key]) + "</td>"; }).join("") +
+        '<td class="s-time">' + (pk ? '<span class="tag tag-ok">제출</span> <small class="hint">' + esc(fmt(pk.submittedAt)) + "</small>" : '<span class="tag tag-warn">미제출</span>') + "</td></tr>";
+    }).join("") || '<tr><td colspan="4" style="text-align:center;color:var(--muted)">학원이 없습니다.</td></tr>';
+  }
+  function exportPicks() {
+    var rows = academyList().filter(function (a) { return a.id && a.students > 0; }).map(function (a) {
+      var pk = picks[a.id] || {}, o = { 학원: a.name };
+      SPECIALS.forEach(function (sp) {
+        var p = pk[sp.key];
+        o[sp.name] = p ? p.name : "";
+        o[sp.name + " 학년·학교"] = p ? (p.grade || "") + " " + (p.school || "") : "";
+        o[sp.name + " 받은 상"] = p ? R.awardName(p.award) : "";
+      });
+      o["제출 시각"] = pk.submittedAt ? fmt(pk.submittedAt) : "미제출";
+      return o;
+    });
+    var w = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(w, XLSX.utils.json_to_sheet(rows), "특별상 추천");
+    XLSX.writeFile(w, "AMC_특별상_추천명단.xlsx");
   }
 
   function fmt(ts) { return ts ? A.fmtDateTime(ts).slice(0, 16) : ""; }
@@ -305,6 +427,7 @@
       return '<tr><td class="a-name"><a href="#" class="ac-name" data-msg="' + esc(r.id) + '"><b>' + esc(r.name) + '</b></a><br><small class="hint">아이디: ' + esc(r.id) + "</small></td>" +
         '<td class="num a-cnt"><span class="m-only">학생 </span>' + r.students + '<span class="m-only">명</span></td><td class="a-conf">' + conf + '</td><td class="a-st">' + stHtml + '</td><td class="a-pw">' + pw + '</td><td class="a-act">' + act + "</td></tr>";
     }).join("") || '<tr><td colspan="6" style="text-align:center;color:var(--muted)">성적을 먼저 올리세요.</td></tr>';
+    renderSpecialAdmin();
   }
   function seeAcademy(id) {
     view = id; $("#pick-academy").value = view; render();
