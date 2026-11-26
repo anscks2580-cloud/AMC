@@ -432,3 +432,11 @@ a.ac-name:hover { text-decoration-color: var(--navy); }
   #sp-table td { display: block; padding: 3px 0; border: 0; white-space: normal; }
   .sp-mlabel { display: block; font-size: 12px; font-weight: 800; color: #8a6414; }
 }
+/* 특별상: 여러 명 고르기 */
+.sp-list { max-height: 260px; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; padding: 4px; background: #fff; }
+.sp-opt { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 5px; font-size: 14px; cursor: pointer; line-height: 1.35; }
+.sp-opt:hover { background: var(--bg); }
+.sp-opt.on { background: #f3e2b5; color: #3a2a06; font-weight: 600; }
+.sp-opt.off { opacity: .45; cursor: not-allowed; }
+.sp-opt input { width: 18px; height: 18px; flex: none; accent-color: #b8860b; }
+.sp-p { margin-bottom: 4px; }
