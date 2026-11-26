@@ -246,7 +246,7 @@
   /* 예전(한 명) 저장 형식도 목록으로 읽음 */
   function pickList(pk, key) { var v = pk && pk[key]; if (!v) return []; return Array.isArray(v) ? v : [v]; }
 
-  var pickBlocked = false, pickDraft = {}, pickEditing = false;
+  var pickBlocked = false, pickDraft = {}, pickEditing = false, spFor = "";
   function studentLabel(r) {
     return r.name + " (" + (r.grade || "") + (r.school ? " · " + r.school : "") + ") · " + R.awardName(r.award);
   }
@@ -262,19 +262,16 @@
   }
   function renderSpecial() {
     var card = $("#special-card"); if (!card) return;
-    /* 관리자 「학원별 보기」: 특정 학원을 골랐을 때만, 읽기 전용 */
+    /* 관리자 「학원별 보기」에서 특정 학원을 고르면 그 학원 추천을 대신 입력·수정할 수 있음 */
+    var my;
     if (isAdmin) {
       if (!view || view === "*" || view === "!" || !quotaTotal(view)) { card.hidden = true; return; }
-      var pk = picks[view];
-      card.hidden = false;
-      card.innerHTML = '<h3 class="sp-h">특별상 추천 <small class="hint">' + (pk ? "제출 " + esc(fmt(pk.submittedAt)) : "아직 제출 안 함") + "</small></h3>" +
-        '<div class="sp-grid">' + SPECIALS.filter(function (sp) { return quotaOf(view, sp.key); }).map(function (sp) {
-          return '<div class="sp-item"><div class="sp-name">' + esc(sp.name) + ' <small class="hint">' + quotaOf(view, sp.key) + '명</small></div><div class="sp-val">' + pickListHtml(pk, sp.key, quotaOf(view, sp.key)) + "</div></div>";
-        }).join("") + "</div>";
-      return;
+      my = view;
+    } else {
+      if (!me) { card.hidden = true; return; }
+      my = me.academyId;
     }
-    if (!me) { card.hidden = true; return; }
-    var my = me.academyId;
+    if (spFor !== my) { spFor = my; pickDraft = {}; pickEditing = false; }
     if (!quotaTotal(my)) { card.hidden = true; return; }
     card.hidden = false;
     if (pickBlocked) {
@@ -299,9 +296,9 @@
       return;
     }
     SPECIALS.forEach(function (sp) { if (!pickDraft[sp.key]) pickDraft[sp.key] = pickList(saved, sp.key).map(function (p) { return p.docId; }); });
-    var awarded = results.filter(function (r) { return r.award; });
+    var awarded = results.filter(function (r) { return r.award && (!isAdmin || r.academyId === my); });
     card.innerHTML = '<h3 class="sp-h">특별상 추천 제출 ' + (saved ? '<span class="tag tag-gold">수정 중</span>' : '<span class="tag tag-warn">미제출</span>') + "</h3>" +
-      '<p class="hint" style="margin:0 0 14px">우리 학원 배정: <b>' + esc(quotaTxt) + "</b>. 이미 상을 받은 우리 학원 학생 중에서 배정된 인원만큼 골라 제출해 주세요. 제출한 뒤에도 「수정하기」로 바꿀 수 있습니다.</p>" +
+      '<p class="hint" style="margin:0 0 14px">' + (isAdmin ? '<b class="admin-note">관리자가 대신 입력합니다.</b> ' : '') + (isAdmin ? '이 학원' : '우리 학원') + ' 배정: <b>' + esc(quotaTxt) + "</b>. 이미 상을 받은 우리 학원 학생 중에서 배정된 인원만큼 골라 제출해 주세요. 제출한 뒤에도 「수정하기」로 바꿀 수 있습니다.</p>" +
       '<div class="sp-grid">' + active.map(function (sp) {
         var n = quotaOf(my, sp.key);
         return '<div class="sp-item" data-sp="' + sp.key + '">' +
@@ -348,7 +345,7 @@
   function docIdOf(r) { return "e_" + String(r.examNo || "").replace(/[\/\s]/g, ""); }
   function findByDocId(id) { return results.filter(function (r) { return docIdOf(r) === id; })[0]; }
   function submitPicks() {
-    var my = me.academyId;
+    var my = spFor;
     var active = SPECIALS.filter(function (sp) { return quotaOf(my, sp.key) > 0; });
     var short = active.filter(function (sp) { return (pickDraft[sp.key] || []).filter(findByDocId).length !== quotaOf(my, sp.key); });
     if (short.length) { alert(short.map(function (sp) { return sp.name + " " + quotaOf(my, sp.key) + "명"; }).join(", ") + "을(를) 모두 골라 주세요."); return; }
@@ -357,7 +354,8 @@
     }).join("\n");
     var isEdit = !!picks[my];
     if (!confirm("아래 학생으로 특별상 추천을 " + (isEdit ? "수정" : "제출") + "할까요?\n\n" + lines)) return;
-    var data = { name: me.name || my, uid: auth.currentUser.uid, submittedAt: firebase.firestore.Timestamp.now() };
+    var acName = isAdmin ? ((academyList().filter(function (a) { return a.id === my; })[0] || {}).name || my) : (me.name || my);
+    var data = { name: acName, uid: auth.currentUser.uid, submittedAt: firebase.firestore.Timestamp.now() };
     SPECIALS.forEach(function (sp) {
       data[sp.key] = (quotaOf(my, sp.key) ? pickDraft[sp.key] : []).map(function (id) {
         var r = findByDocId(id);
