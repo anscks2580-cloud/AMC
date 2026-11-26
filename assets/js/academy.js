@@ -220,14 +220,29 @@
     { key: "jihaksa", name: "지학사 대표이사상" },
     { key: "pungsanja", name: "풍산자 수학연구소장상" }
   ];
-  var QUOTA = {   /* 학원ID: [지학사, 풍산자] */
+  /* 기본: 학생이 있는 모든 학원 지학사 1 + 풍산자 1, 여기에 「특별상 학원별 배정 내역」 매수를 더함 */
+  var BASE = [1, 1];
+  var EXTRA = {   /* 학원ID: [지학사 추가, 풍산자 추가] */
     "가람스카이수학학원": [0, 1], "강의하는아이들": [1, 1], "대시나루국어학원": [1, 2], "동일학원": [1, 1],
     "두드림창의수학학원": [1, 1], "리더스학원": [1, 2], "바른길수학학원": [1, 1], "백년대계학림학원": [1, 1],
     "송우찬수학학원": [1, 2], "수학이만드는세상학원": [0, 1], "유수하수학학원": [1, 2], "주선생영수학학원": [1, 2],
     "한빛주니어학원": [1, 1], "G1230수학학원": [1, 2], "JTD수학과학학원": [0, 1]
   };
-  function quotaOf(id, key) { var q = QUOTA[id]; if (!q) return 0; return key === "jihaksa" ? q[0] : q[1]; }
-  function quotaTotal(id) { var q = QUOTA[id]; return q ? q[0] + q[1] : 0; }
+  function hasStudents(id) {
+    if (!isAdmin) return id === (me && me.academyId) && results.length > 0;
+    return results.some(function (r) { return r.academyId === id; });
+  }
+  function quotaOf(id, key) {
+    var k = key === "jihaksa" ? 0 : 1, e = EXTRA[id] ? EXTRA[id][k] : 0;
+    return (hasStudents(id) ? BASE[k] : 0) + e;
+  }
+  function quotaTotal(id) { return quotaOf(id, "jihaksa") + quotaOf(id, "pungsanja"); }
+  function quotaIds() {
+    var ids = {};
+    Object.keys(EXTRA).forEach(function (id) { ids[id] = 1; });
+    results.forEach(function (r) { if (r.academyId) ids[r.academyId] = 1; });
+    return Object.keys(ids).filter(function (id) { return quotaTotal(id) > 0; });
+  }
   /* 예전(한 명) 저장 형식도 목록으로 읽음 */
   function pickList(pk, key) { var v = pk && pk[key]; if (!v) return []; return Array.isArray(v) ? v : [v]; }
 
@@ -362,7 +377,7 @@
   function renderSpecialAdmin() {
     if (!isAdmin) return;
     var names = {}; academyList().forEach(function (a) { names[a.id] = a.name; });
-    var list = Object.keys(QUOTA).map(function (id) { return { id: id, name: names[id] || id }; });
+    var list = quotaIds().map(function (id) { return { id: id, name: names[id] || id }; });
     var done = list.filter(function (a) { return picks[a.id]; }).length;
     var tj = 0, tp = 0; list.forEach(function (a) { tj += quotaOf(a.id, "jihaksa"); tp += quotaOf(a.id, "pungsanja"); });
     $("#sp-stats").innerHTML = '<div class="stat"><b>' + list.length + '</b><span>배정 학원</span></div>' +
@@ -382,7 +397,7 @@
   function exportPicks() {
     var names = {}; academyList().forEach(function (a) { names[a.id] = a.name; });
     var rows = [];
-    Object.keys(QUOTA).sort(function (a, b) { return a.localeCompare(b, "ko"); }).forEach(function (id) {
+    quotaIds().sort(function (a, b) { return a.localeCompare(b, "ko"); }).forEach(function (id) {
       var pk = picks[id];
       SPECIALS.forEach(function (sp) {
         var n = quotaOf(id, sp.key); if (!n) return;
